@@ -1,0 +1,11 @@
+.env
+node_modules
+dist
+.stitch
+# Build outputs
+.next
+out
+
+# OS files
+.DS_Store
+Thumbs.db
