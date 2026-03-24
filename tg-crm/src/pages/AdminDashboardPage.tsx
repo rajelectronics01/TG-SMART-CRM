@@ -90,12 +90,12 @@ export default function AdminDashboardPage() {
   }
 
   const kpis = [
-    { label: 'Unassigned', value: stats.unassigned, icon: <AlertCircle size={20} />, color: '#ef4444', sub: 'Action Required' },
-    { label: 'Active Jobs', value: stats.inProgress, icon: <Clock size={20} />, color: '#f59e0b', sub: 'In Progress' },
-    { label: 'Parts Pending', value: stats.partsNeeded, icon: <RefreshCw size={20} />, color: '#8b5cf6', sub: 'Delayed' },
-    { label: 'Today Fixed', value: stats.resolvedDay, icon: <CheckCircle size={20} />, color: '#10b981', sub: 'Completed' },
-    { label: 'Month Fixed', value: stats.resolvedMonth, icon: <Award size={20} />, color: '#0ea5e9', sub: 'Efficiency' },
-    { label: 'Total Volume', value: stats.total, icon: <Ticket size={20} />, color: '#6366f1', sub: 'All Tickets' },
+    { label: 'Unassigned', value: stats.unassigned, icon: <AlertCircle size={20} />, color: '#ef4444', sub: 'Action Required', path: '/admin/tickets?status=new' },
+    { label: 'Active Jobs', value: stats.inProgress, icon: <Clock size={20} />, color: '#f59e0b', sub: 'In Progress', path: '/admin/tickets?status=in_progress' },
+    { label: 'Parts Pending', value: stats.partsNeeded, icon: <RefreshCw size={20} />, color: '#8b5cf6', sub: 'Delayed', path: '/admin/tickets?status=parts_needed' },
+    { label: 'Today Fixed', value: stats.resolvedDay, icon: <CheckCircle size={20} />, color: '#10b981', sub: 'Completed', path: '/admin/tickets?status=resolved' },
+    { label: 'Month Fixed', value: stats.resolvedMonth, icon: <Award size={20} />, color: '#0ea5e9', sub: 'Efficiency', path: '/admin/tickets?status=resolved' },
+    { label: 'Total Volume', value: stats.total, icon: <Ticket size={20} />, color: '#6366f1', sub: 'All Tickets', path: '/admin/tickets?status=all' },
   ];
 
   return (
@@ -112,23 +112,38 @@ export default function AdminDashboardPage() {
 
       <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
         {kpis.map((k) => (
-          <div key={k.label} style={{ 
-            background: '#fff', padding: '1.5rem', borderRadius: '20px', border: '1px solid #e2e8f0', 
-            boxShadow: '0 4px 12px rgba(0,0,0,0.03)', position: 'relative', overflow: 'hidden'
-          }}>
-             <div style={{ position: 'absolute', top: '-10px', right: '-10px', width: '60px', height: '60px', background: k.color, opacity: 0.05, borderRadius: '50%' }}></div>
-             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-               <div style={{ background: `${k.color}15`, padding: '8px', borderRadius: '10px', color: k.color }}>{k.icon}</div>
-               <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>{k.label}</span>
-             </div>
-             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                <p style={{ fontSize: '2.25rem', fontWeight: 900, color: '#0f172a', margin: 0, lineHeight: 1 }}>{k.value}</p>
-                <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>units</span>
-             </div>
-             <p style={{ fontSize: '0.75rem', color: k.color, fontWeight: 700, marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Zap size={10} /> {k.sub}
-             </p>
-          </div>
+          <Link key={k.label} to={k.path} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+            <div style={{ 
+              background: '#fff', padding: '1.5rem', borderRadius: '20px', border: '1px solid #e2e8f0', 
+              boxShadow: '0 4px 12px rgba(0,0,0,0.03)', position: 'relative', overflow: 'hidden',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              cursor: 'pointer'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)';
+              e.currentTarget.style.borderColor = k.color;
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.03)';
+              e.currentTarget.style.borderColor = '#e2e8f0';
+            }}
+            >
+               <div style={{ position: 'absolute', top: '-10px', right: '-10px', width: '60px', height: '60px', background: k.color, opacity: 0.05, borderRadius: '50%' }}></div>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                 <div style={{ background: `${k.color}15`, padding: '8px', borderRadius: '10px', color: k.color }}>{k.icon}</div>
+                 <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>{k.label}</span>
+               </div>
+               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                  <p style={{ fontSize: '2.25rem', fontWeight: 900, color: '#0f172a', margin: 0, lineHeight: 1 }}>{k.value}</p>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>units</span>
+               </div>
+               <p style={{ fontSize: '0.75rem', color: k.color, fontWeight: 700, marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Zap size={10} /> {k.sub}
+               </p>
+            </div>
+          </Link>
         ))}
       </div>
 

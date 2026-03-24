@@ -3,7 +3,7 @@ import { supabase } from '../core/supabase/client';
 import type { Ticket, Customer, Employee } from '../core/supabase/database.types';
 import AppLayout from '../components/AppLayout';
 import { Search, Filter, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 type FullTicket = Ticket & {
   customers: Customer | null;
@@ -24,7 +24,8 @@ export default function AdminTicketsPage() {
   const [tickets, setTickets] = useState<FullTicket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchParams] = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') ?? 'all');
 
   useEffect(() => {
     fetchTickets();

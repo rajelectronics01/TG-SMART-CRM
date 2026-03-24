@@ -3,7 +3,7 @@ import AppLayout from '../components/AppLayout';
 import { useAuth } from '../core/auth/AuthContext';
 import { supabase } from '../core/supabase/client';
 import type { TicketWithDetails } from '../core/supabase/database.types';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AlertCircle, ChevronRight, MapPin, Search as SearchIcon, RefreshCw, User } from 'lucide-react';
 
 export default function ManagerTicketsPage() {
@@ -11,7 +11,8 @@ export default function ManagerTicketsPage() {
   const [tickets, setTickets] = useState<TicketWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchParams] = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') ?? 'all');
 
   useEffect(() => {
     if (employee?.id) fetchTickets();

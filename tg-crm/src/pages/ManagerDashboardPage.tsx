@@ -70,22 +70,30 @@ export default function ManagerDashboardPage() {
         </div>
 
         <div className="kpi-grid" style={{ marginBottom: '2rem' }}>
-          <div className="kpi-card accent-amber">
-            <div className="kpi-label"><Clock size={16} /> Pending in Area</div>
-            <div className="kpi-value">{metrics.pending}</div>
-          </div>
-          <div className="kpi-card accent-blue">
-             <div className="kpi-label"><AlertCircle size={16} /> In Progress</div>
-             <div className="kpi-value">{metrics.inProgress}</div>
-          </div>
-          <div className="kpi-card accent-green">
-             <div className="kpi-label"><CheckCircle size={16} /> Completed</div>
-             <div className="kpi-value">{metrics.completed}</div>
-          </div>
-          <div className="kpi-card accent-purple">
-             <div className="kpi-label"><Users size={16} /> My Technicians</div>
-             <div className="kpi-value">{assignedTechnicians.length}</div>
-          </div>
+          <Link to="/manager/tickets?status=new" className="kpi-link">
+            <div className="kpi-card accent-amber">
+              <div className="kpi-label"><Clock size={16} /> Pending in Area</div>
+              <div className="kpi-value">{metrics.pending}</div>
+            </div>
+          </Link>
+          <Link to="/manager/tickets?status=in_progress" className="kpi-link">
+            <div className="kpi-card accent-blue">
+               <div className="kpi-label"><AlertCircle size={16} /> In Progress</div>
+               <div className="kpi-value">{metrics.inProgress}</div>
+            </div>
+          </Link>
+          <Link to="/manager/tickets?status=resolved" className="kpi-link">
+            <div className="kpi-card accent-green">
+               <div className="kpi-label"><CheckCircle size={16} /> Completed</div>
+               <div className="kpi-value">{metrics.completed}</div>
+            </div>
+          </Link>
+          <Link to="/manager/technicians" className="kpi-link">
+            <div className="kpi-card accent-purple">
+               <div className="kpi-label"><Users size={16} /> My Technicians</div>
+               <div className="kpi-value">{assignedTechnicians.length}</div>
+            </div>
+          </Link>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '1.5rem' }}>
@@ -144,6 +152,9 @@ export default function ManagerDashboardPage() {
       </div>
 
       <style>{`
+        .kpi-link { text-decoration: none; color: inherit; display: block; }
+        .kpi-card { transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
+        .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
         .ticket-list-item-minimal {
           display: flex;
           align-items: center;

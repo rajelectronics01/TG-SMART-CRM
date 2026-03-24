@@ -19,7 +19,7 @@ const STATUS_LABELS: Record<string, string> = {
   resolved: 'Resolved', cancelled: 'Cancelled',
 };
 
-type Filter = 'all' | 'new' | 'assigned' | 'in_progress' | 'parts_needed';
+type Filter = 'all' | 'new' | 'assigned' | 'in_progress' | 'parts_needed' | 'resolved';
 
 export default function EmployeeDashboardPage() {
   const { employee } = useAuth();
@@ -51,10 +51,10 @@ export default function EmployeeDashboardPage() {
   const filtered = filter === 'all' ? tickets : tickets.filter((t) => t.status === filter);
 
   const kpis = [
-    { label: 'Open Tickets', value: tickets.filter((t) => t.status === 'new' || t.status === 'assigned').length, accent: 'accent-blue' },
-    { label: 'In Progress', value: tickets.filter((t) => t.status === 'in_progress').length, accent: 'accent-amber' },
-    { label: 'Parts Needed', value: tickets.filter((t) => t.status === 'parts_needed' || t.status === 'parts_ordered').length, accent: 'accent-red' },
-    { label: 'Resolved', value: tickets.filter((t) => t.status === 'resolved').length, accent: 'accent-green' },
+    { label: 'Open Tickets', value: tickets.filter((t) => t.status === 'new' || t.status === 'assigned').length, accent: 'accent-blue', filter: 'assigned' as Filter },
+    { label: 'In Progress', value: tickets.filter((t) => t.status === 'in_progress').length, accent: 'accent-amber', filter: 'in_progress' as Filter },
+    { label: 'Parts Needed', value: tickets.filter((t) => t.status === 'parts_needed' || t.status === 'parts_ordered').length, accent: 'accent-red', filter: 'parts_needed' as Filter },
+    { label: 'Resolved', value: tickets.filter((t) => t.status === 'resolved').length, accent: 'accent-green', filter: 'resolved' as Filter },
   ];
 
   const firstName = employee?.name?.split(' ')[0] ?? 'there';
@@ -84,7 +84,20 @@ export default function EmployeeDashboardPage() {
       {/* KPI Cards */}
       <div className="kpi-grid">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className={`kpi-card ${kpi.accent}`}>
+          <div 
+            key={kpi.label} 
+            className={`kpi-card ${kpi.accent}`} 
+            onClick={() => setFilter(kpi.filter)}
+            style={{ cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.1)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
             <p style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.75rem', fontWeight: 700 }}>
               {kpi.label}
             </p>
@@ -99,11 +112,11 @@ export default function EmployeeDashboardPage() {
           <Ticket size={18} /> My Active Jobs
         </h2>
         <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem', flex: 1, justifyContent: 'flex-end' }}>
-          {(['all', 'assigned', 'in_progress', 'parts_needed'] as Filter[]).map((f) => (
+          {(['all', 'assigned', 'in_progress', 'parts_needed', 'resolved'] as Filter[]).map((f) => (
             <button key={f} onClick={() => setFilter(f)}
               className={filter === f ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
               style={{ minWidth: '80px', height: '36px' }}>
-              {f === 'all' ? 'All' : STATUS_LABELS[f]}
+              {f === 'all' ? 'All' : STATUS_LABELS[f] || (f.charAt(0).toUpperCase() + f.slice(1))}
             </button>
           ))}
         </div>
