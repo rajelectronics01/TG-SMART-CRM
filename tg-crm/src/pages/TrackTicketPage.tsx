@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../core/supabase/client';
 import type { Ticket, Customer } from '../core/supabase/database.types';
-import { Search, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Search, CheckCircle, Clock, AlertCircle, User, ArrowRight } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   new:           { label: 'New',           className: 'badge badge-new' },
@@ -33,18 +33,22 @@ export default function TrackTicketPage() {
     try {
       let result = null;
       
-      if (id.toUpperCase().startsWith('TKT-')) {
-        result = await supabase
-          .from('tickets')
-          .select('*, customers(*)')
-          .ilike('ticket_number', id.toUpperCase())
-          .limit(1)
-          .maybeSingle();
-      } else {
+      const cleanId = id.trim().toUpperCase();
+      
+      // Try fetching by Ticket Number first
+      result = await supabase
+        .from('tickets')
+        .select('*, customers(*)')
+        .ilike('ticket_number', cleanId)
+        .limit(1)
+        .maybeSingle();
+
+      // If not found, try by phone number
+      if (!result.data) {
         result = await supabase
           .from('tickets')
           .select('*, customers!inner(*)')
-          .eq('customers.phone', id)
+          .eq('customers.phone', cleanId)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -77,18 +81,37 @@ export default function TrackTicketPage() {
   const currentStepIndex = ticket ? ALL_STATUSES.indexOf(ticket.status) : -1;
 
   return (
-    <div className="public-light-theme">
-      <header style={{ padding: '1rem 2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <div className="sidebar-logo-mark">
-          <img src="/tg-logo.jpg" alt="TG Logo" />
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#f8fafc', fontFamily: 'var(--font-body)' }}>
+      {/* Bold Header */}
+      <header style={{ 
+        padding: '1.25rem 2rem', 
+        background: '#0f172a', 
+        color: '#fff',
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ background: '#fff', padding: '4px', borderRadius: '8px' }}>
+            <img src="/tg-logo.jpg" alt="TG SMART" style={{ width: 40, height: 40, borderRadius: '4px', objectFit: 'contain' }} />
+          </div>
+          <div>
+            <span style={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '0.02em', display: 'block', lineHeight: 1.2 }}>TG SMART</span>
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Service Portal</span>
+          </div>
         </div>
-        <div>
-          <div style={{ fontFamily: 'var(--font-headline)', fontWeight: 800, fontSize: '1rem', color: '#000' }}>TG SMART</div>
-          <div style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Track Your Complaint</div>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <a href="/complaint" style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.1)', padding: '0.4rem 0.8rem', borderRadius: '99px', transition: 'all 0.2s' }}>
+            New Complaint <ArrowRight size={14} />
+          </a>
+          <button 
+            onClick={() => navigate('/login')}
+            style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.2)', padding: '0.4rem 0.8rem', borderRadius: '99px', transition: 'all 0.2s' }}
+          >
+            <User size={14} /> Login
+          </button>
         </div>
-        <a href="/complaint" style={{ marginLeft: 'auto', color: 'var(--primary)', fontSize: '0.875rem', textDecoration: 'none' }}>
-          Register New Complaint →
-        </a>
       </header>
 
       <div style={{ maxWidth: '680px', margin: '3rem auto', padding: '0 1.5rem' }}>
