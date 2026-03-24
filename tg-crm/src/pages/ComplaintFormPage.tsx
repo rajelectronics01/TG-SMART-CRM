@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../core/supabase/client';
-import { User, Cpu, AlertTriangle, CheckCircle, Upload, Camera, FileText, ArrowRight, ArrowLeft } from 'lucide-react';
+import { User, Cpu, AlertTriangle, CheckCircle, Camera, FileText, ArrowRight, ArrowLeft } from 'lucide-react';
 import { sendSMS } from '../core/utils/sms';
 import { notifyNewTicket } from '../core/utils/email';
 
@@ -207,9 +207,22 @@ export default function ComplaintFormPage() {
             <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Service Portal</span>
           </div>
         </div>
-        <a href="/track" style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.1)', padding: '0.5rem 1rem', borderRadius: '99px', transition: 'all 0.2s' }}>
-          Track Ticket <ArrowRight size={16} />
-        </a>
+        <style>{`
+          @media (max-width: 767px) {
+            .hide-on-mobile { display: none !important; }
+          }
+        `}</style>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <a href="/track" className="hide-on-mobile" style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.1)', padding: '0.4rem 0.8rem', borderRadius: '99px', transition: 'all 0.2s' }}>
+            Track Ticket <ArrowRight size={14} />
+          </a>
+          <button 
+            onClick={() => navigate('/login')}
+            style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.2)', padding: '0.4rem 0.8rem', borderRadius: '99px', transition: 'all 0.2s' }}
+          >
+            <User size={14} /> Login
+          </button>
+        </div>
       </header>
 
       <main style={{ flex: 1, maxWidth: '720px', margin: '0 auto', width: '100%', padding: '2rem 1rem', display: 'flex', flexDirection: 'column' }}>

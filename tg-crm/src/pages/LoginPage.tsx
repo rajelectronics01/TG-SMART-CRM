@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../core/supabase/client';
-import { Shield, Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { Shield, Eye, EyeOff, Lock, Mail, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../core/auth/AuthContext';
 
 type LoginMethod = 'password' | 'otp';
@@ -92,7 +92,24 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="public-light-theme login-page">
+    <div className="public-light-theme login-page" style={{ position: 'relative' }}>
+      
+      {/* Return Navigation */}
+      <div style={{ position: 'absolute', top: '1.5rem', left: '1.5rem' }}>
+        <button 
+          onClick={() => navigate('/')} 
+          className="btn btn-ghost" 
+          style={{ 
+            background: 'white', border: '1px solid var(--outline)', 
+            borderRadius: '99px', padding: '0.5rem 1rem', 
+            fontSize: '0.85rem', fontWeight: 700,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          }}
+        >
+          <ArrowLeft size={16} /> Back to Portal
+        </button>
+      </div>
+
       <div className="glass-card login-card">
         
         {/* Logo Section */}
