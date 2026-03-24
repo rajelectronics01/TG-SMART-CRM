@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- White square background (favicon needs solid bg) -->
+  <rect width="512" height="512" fill="#ffffff" rx="60"/>
+
+  <!-- 
+    TG SMART Logo Recreation
+    Left side: T (bold, double-line style)
+    Right side: G (bold, double-line style)  
+    Bottom: SMART text
+  -->
+
+  <!-- ===== T LETTER ===== -->
+  <!-- Top crossbar - outer thick bar -->
+  <rect x="28" y="52" width="198" height="28" rx="2" fill="#111111"/>
+  <!-- Top crossbar - inner cutout (creates double-line effect) -->
+  <rect x="44" y="80" width="166" height="14" fill="#ffffff"/>
+  <!-- Top crossbar - second inner bar -->
+  <rect x="44" y="94" width="166" height="22" rx="2" fill="#111111"/>
+
+  <!-- T vertical stem - outer -->
+  <rect x="99" y="116" width="56" height="186" rx="2" fill="#111111"/>
+
+  <!-- ===== G LETTER ===== -->
+  <!-- Top crossbar - outer thick bar -->
+  <rect x="282" y="52" width="202" height="28" rx="2" fill="#111111"/>
+  <!-- Top crossbar - inner cutout -->
+  <rect x="298" y="80" width="170" height="14" fill="#ffffff"/>
+  <!-- Top crossbar - second inner bar -->
+  <rect x="298" y="94" width="170" height="22" rx="2" fill="#111111"/>
+
+  <!-- G left vertical bar - outer -->
+  <rect x="282" y="52" width="30" height="256" rx="2" fill="#111111"/>
+  <!-- G left vertical bar - inner cutout -->
+  <rect x="312" y="80" width="16" height="214" fill="#ffffff"/>
+  <!-- G left vertical bar - second bar -->
+  <rect x="328" y="94" width="22" height="200" rx="2" fill="#111111"/>
+
+  <!-- G bottom crossbar -->
+  <rect x="282" y="278" width="202" height="30" rx="2" fill="#111111"/>
+  <!-- G bottom inner cutout -->
+  <rect x="312" y="254" width="172" height="24" rx="2" fill="#111111"/>
+  <!-- Cover to make clean bottom -->
+  <rect x="312" y="278" width="172" height="14" fill="#ffffff"/>
+  <rect x="312" y="278" width="16" height="30" fill="#111111"/>
+
+  <!-- G right middle horizontal (the middle arm) -->
+  <rect x="392" y="172" width="92" height="26" rx="2" fill="#111111"/>
+
+  <!-- G right vertical (lower half only - that's what makes it G not C) -->
+  <rect x="454" y="172" width="30" height="136" rx="2" fill="#111111"/>
+
+  <!-- ===== SMART TEXT ===== -->
+  <text 
+    x="256" 
+    y="430" 
+    font-family="'Arial Black', 'Impact', 'Arial', sans-serif"
+    font-weight="900"
+    font-size="72"
+    fill="#111111"
+    text-anchor="middle"
+    letter-spacing="18"
+  >SMART</text>
+
+  <!-- Thin separator line -->
+  <rect x="28" y="318" width="456" height="4" rx="2" fill="#111111" opacity="0.12"/>
+</svg>

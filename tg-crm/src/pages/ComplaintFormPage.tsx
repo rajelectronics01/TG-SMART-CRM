@@ -187,8 +187,22 @@ export default function ComplaintFormPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#f8fafc', fontFamily: 'var(--font-body)' }}>
       {/* Bold Header */}
-      <header style={{ 
-        padding: '1.25rem 2rem', 
+      <style>{`
+        @media (max-width: 767px) {
+          .hide-on-mobile { display: none !important; }
+          .cf-hero { padding: 1.25rem 0 0.75rem !important; margin-bottom: 0 !important; }
+          .cf-hero h1 { font-size: 1.75rem !important; margin-bottom: 0.25rem !important; }
+          .cf-hero p { font-size: 0.95rem !important; }
+          .cf-main { padding: 0.75rem 0.75rem !important; }
+          .cf-card { padding: 1.25rem !important; border-radius: 16px !important; }
+          .cf-steps { margin-bottom: 1rem !important; padding: 0.35rem !important; }
+          .cf-step-item { padding: 0.6rem 0.25rem !important; font-size: 0.72rem !important; }
+          .cf-nav-btn { height: 52px !important; font-size: 1rem !important; }
+          .cf-header { padding: 0.875rem 1rem !important; }
+        }
+      `}</style>
+      <header className="cf-header" style={{ 
+        padding: '1rem 2rem', 
         background: '#0f172a', 
         color: '#fff',
         display: 'flex', 
@@ -196,21 +210,16 @@ export default function ComplaintFormPage() {
         justifyContent: 'space-between',
         boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ background: '#fff', padding: '4px', borderRadius: '8px' }}>
-            <img src="/tg-logo.jpg" alt="TG SMART" style={{ width: 40, height: 40, borderRadius: '4px', objectFit: 'contain' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ background: '#fff', padding: '3px 6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src="/tg-logo.jpg" alt="TG SMART" style={{ width: 44, height: 36, objectFit: 'contain' }} />
           </div>
           <div>
-            <span style={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '0.02em', display: 'block', lineHeight: 1.2 }}>TG SMART</span>
-            <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Service Portal</span>
+            <span style={{ fontWeight: 900, fontSize: '1.2rem', letterSpacing: '0.04em', display: 'block', lineHeight: 1.1 }}>TG SMART</span>
+            <span style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.12em' }}>SERVICE PORTAL</span>
           </div>
         </div>
-        <style>{`
-          @media (max-width: 767px) {
-            .hide-on-mobile { display: none !important; }
-          }
-        `}</style>
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <a href="/track" className="hide-on-mobile" style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.1)', padding: '0.4rem 0.8rem', borderRadius: '99px', transition: 'all 0.2s' }}>
             Track Ticket <ArrowRight size={14} />
           </a>
@@ -223,26 +232,26 @@ export default function ComplaintFormPage() {
         </div>
       </header>
 
-      <main style={{ flex: 1, maxWidth: '720px', margin: '0 auto', width: '100%', padding: '2rem 1rem', display: 'flex', flexDirection: 'column' }}>
+      <main className="cf-main" style={{ flex: 1, maxWidth: '720px', margin: '0 auto', width: '100%', padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column' }}>
         
         {/* Bold Title Area */}
-        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <h1 className="text-display-md" style={{ color: '#0f172a', marginBottom: '0.5rem', fontSize: 'clamp(2rem, 5vw, 2.75rem)' }}>Need Help? We’re Here.</h1>
-          <p style={{ color: '#475569', fontSize: '1.1rem', maxWidth: '500px', margin: '0 auto' }}>Fast, reliable & professional repairs for your TG SMART appliances.</p>
+        <div className="cf-hero" style={{ textAlign: 'center', marginBottom: '1.25rem', paddingTop: '0.5rem' }}>
+          <h1 style={{ color: '#0f172a', marginBottom: '0.35rem', fontSize: 'clamp(1.65rem, 5vw, 2.75rem)', fontWeight: 900, lineHeight: 1.15, letterSpacing: '-0.02em' }}>Need Help? We're Here.</h1>
+          <p style={{ color: '#475569', fontSize: '1rem', maxWidth: '500px', margin: '0 auto', fontWeight: 500 }}>Fast, reliable & professional repairs for your TG SMART appliances.</p>
         </div>
 
         {/* Fancy Progress Bar */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', background: '#fff', padding: '0.5rem', borderRadius: '99px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+        <div className="cf-steps" style={{ display: 'flex', gap: '0.35rem', marginBottom: '1.25rem', background: '#fff', padding: '0.4rem', borderRadius: '99px', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
           {steps.map((s, i) => (
-            <div key={s.label} style={{
-              flex: 1, textAlign: 'center', padding: '0.75rem 0.5rem', borderRadius: '99px', fontSize: '0.8rem', fontWeight: 700,
-              background: i === step ? '#0f172a' : i < step ? '#f1f5f9' : 'transparent',
+            <div key={s.label} className="cf-step-item" style={{
+              flex: 1, textAlign: 'center', padding: '0.65rem 0.4rem', borderRadius: '99px', fontSize: '0.78rem', fontWeight: 800,
+              background: i === step ? '#0f172a' : i < step ? '#e2e8f0' : 'transparent',
               color: i === step ? '#fff' : i < step ? '#0f172a' : '#94a3b8',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
-              transition: 'all 0.3s ease', cursor: 'default'
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem',
+              transition: 'all 0.3s ease', cursor: 'default', letterSpacing: '0.02em'
             }}>
-              {i < step ? <CheckCircle size={16} className="text-success" /> : s.icon}
-              <span className="desktop-only" style={{ display: i === step ? 'inline' : 'none' }} >{s.label}</span>
+              {i < step ? <CheckCircle size={15} style={{ color: i < step ? '#16a34a' : 'inherit' }} /> : s.icon}
+              <span style={{ display: i === step ? 'inline' : 'none' }}>{s.label}</span>
             </div>
           ))}
         </div>
@@ -254,8 +263,8 @@ export default function ComplaintFormPage() {
         )}
 
         {/* Main Form Card */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          <div style={{ background: '#fff', padding: '2.5rem', borderRadius: '24px', boxShadow: '0 10px 40px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.05)' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div className="cf-card" style={{ background: '#fff', padding: '2rem', borderRadius: '20px', boxShadow: '0 8px 32px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)' }}>
             
             {/* STEP 1: Details */}
             {step === 0 && (
@@ -377,32 +386,32 @@ export default function ComplaintFormPage() {
           </div>
 
           {/* Navigation Buttons */}
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
             {step > 0 && (
               <button 
                 type="button" 
-                className="btn btn-secondary" 
-                style={{ flex: 1, height: '56px', fontSize: '1.1rem', borderRadius: '16px', background: '#fff', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }} 
+                className="btn btn-secondary cf-nav-btn" 
+                style={{ flex: 1, height: '54px', fontSize: '1rem', borderRadius: '14px', background: '#fff', border: '2px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', cursor: 'pointer' }} 
                 onClick={() => setStep(step - 1)}
               >
-                <ArrowLeft size={20} /> Back
+                <ArrowLeft size={18} /> Back
               </button>
             )}
             <button 
               type="submit" 
-              className="btn btn-primary" 
-              style={{ flex: 2, height: '56px', fontSize: '1.1rem', borderRadius: '16px', background: '#0f172a', boxShadow: '0 10px 25px rgba(15, 23, 42, 0.3)' }} 
+              className="btn btn-primary cf-nav-btn" 
+              style={{ flex: 2, height: '54px', fontSize: '1rem', borderRadius: '14px', background: '#0f172a', boxShadow: '0 8px 20px rgba(15, 23, 42, 0.35)', fontWeight: 900, letterSpacing: '0.02em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', border: 'none', color: '#fff', cursor: 'pointer' }} 
               disabled={isLoading}
             >
               {step < 2 ? (
-                <>Next Step <ArrowRight size={20} /></>
+                <>Next Step <ArrowRight size={18} /></>
               ) : isLoading ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                   <div style={{ width: '20px', height: '20px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                   Submitting Order...
+                   <div style={{ width: '18px', height: '18px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                   Submitting...
                 </div>
               ) : (
-                <>Book Service Now <CheckCircle size={20} /></>
+                <>Book Service Now <CheckCircle size={18} /></>
               )}
             </button>
           </div>
@@ -410,9 +419,9 @@ export default function ComplaintFormPage() {
       </main>
 
       {/* Footer */}
-      <footer style={{ padding: '2rem', textAlign: 'center', borderTop: '1px solid rgba(0,0,0,0.05)', marginTop: 'auto' }}>
-        <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.5rem' }}>© {new Date().getFullYear()} TG SMART Customer Service</p>
-        <a href="/login" style={{ fontSize: '0.75rem', color: '#0f172a', textDecoration: 'none', fontWeight: 700, opacity: 0.5, letterSpacing: '0.05em' }}>STAFF PORTAL LOGIN</a>
+      <footer style={{ padding: '1.25rem 1rem', textAlign: 'center', borderTop: '1px solid rgba(0,0,0,0.05)', marginTop: 'auto' }}>
+        <p style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.35rem' }}>© {new Date().getFullYear()} TG SMART Customer Service</p>
+        <a href="/login" style={{ fontSize: '0.72rem', color: '#0f172a', textDecoration: 'none', fontWeight: 800, opacity: 0.45, letterSpacing: '0.08em' }}>STAFF PORTAL LOGIN</a>
       </footer>
 
       <style>{`
