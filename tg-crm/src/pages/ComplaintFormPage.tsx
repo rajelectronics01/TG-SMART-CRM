@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../core/supabase/client';
 import { User, Cpu, AlertTriangle, CheckCircle, Camera, FileText, ArrowRight, ArrowLeft } from 'lucide-react';
 import { sendSMS } from '../core/utils/sms';
-import { notifyNewTicket } from '../core/utils/email';
+import { notifyNewTicket, notifyTechnicianAssigned } from '../core/utils/email';
 
 const PRODUCT_TYPES = [
   'Washing Machine', 'Air Cooler', 'Washer', 'Television'
@@ -161,13 +161,11 @@ export default function ComplaintFormPage() {
 
       // Trigger Phase 2 (Auto-Assignment) if routed
       if (autoAssignedTo && form.email) {
-        import('../core/utils/email').then(({ notifyTechnicianAssigned }) => {
-          notifyTechnicianAssigned(
-            { ...ticket, customer_name: form.name }, 
-            form.email, 
-            techName
-          );
-        });
+        notifyTechnicianAssigned(
+          { ...ticket, customer_name: form.name }, 
+          form.email, 
+          techName
+        );
       }
 
       // 8. Redirect to confirmation

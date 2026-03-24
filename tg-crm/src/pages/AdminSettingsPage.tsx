@@ -1,5 +1,6 @@
 import AppLayout from '../components/AppLayout';
 import { useAuth } from '../core/auth/AuthContext';
+import { sendSMS } from '../core/utils/sms';
 import { User, Shield, CreditCard, Bell } from 'lucide-react';
 
 export default function AdminSettingsPage() {
@@ -82,7 +83,6 @@ export default function AdminSettingsPage() {
                       btn.innerText = "Sending...";
                       btn.disabled = true;
                       
-                      const { sendSMS } = await import('../core/utils/sms');
                       const result = await sendSMS(num, "TG SMART: This is a system test message from your Admin Panel.");
                       
                       btn.innerText = "Send Test SMS";
