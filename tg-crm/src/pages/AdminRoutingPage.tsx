@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import AppLayout from '../components/AppLayout';
 import { supabase } from '../core/supabase/client';
-import { Trash2, RefreshCw, Layers, Map as MapIcon, Info, Users } from 'lucide-react';
+import { Trash2, RefreshCw, Layers, Map as MapIcon, Info, Users, CheckCircle2, Navigation } from 'lucide-react';
 
 interface Employee {
   id: string;
@@ -17,8 +17,8 @@ interface PincodeRoute {
 }
 
 const FRANCHISE_COLORS = [
-  '#2563eb', '#dc2626', '#16a34a', '#d97706', '#9333ea', 
-  '#0891b2', '#be185d', '#475569', '#ca8a04', '#15803d'
+  '#0ea5e9', '#f43f5e', '#10b981', '#f59e0b', '#8b5cf6', 
+  '#14b8a6', '#db2777', '#64748b', '#eab308', '#22c55e'
 ];
 
 const REGION_CONFIG = {
@@ -117,11 +117,13 @@ export default function AdminRoutingPage() {
     if (!L) return;
 
     const config = REGION_CONFIG[activeRegionId];
-    const map = L.map('franchise-map-container').setView(config.center, config.zoom);
+    const map = L.map('franchise-map-container', { zoomControl: false }).setView(config.center, config.zoom);
+    L.control.zoom({ position: 'topright' }).addTo(map);
     mapRef.current = map;
 
-    L.tileLayer('https://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OSM'
+    // Premium Map Tiles
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO'
     }).addTo(map);
 
     renderLayers();
@@ -153,11 +155,11 @@ export default function AdminRoutingPage() {
         const emp = employees.find(e => e.id === route?.employee_id);
         
         return {
-          fillColor: emp ? emp.color : '#cbd5e1',
-          weight: 1,
+          fillColor: emp ? emp.color : '#e2e8f0',
+          weight: emp ? 2 : 1,
           opacity: 1,
-          color: 'white',
-          fillOpacity: emp ? 0.7 : 0.2
+          color: emp ? '#fff' : '#cbd5e1',
+          fillOpacity: emp ? 0.8 : 0.3
         };
       },
       onEachFeature: (feature: any, layer: any) => {
@@ -165,7 +167,7 @@ export default function AdminRoutingPage() {
         
         layer.on({
           mouseover: () => {
-             layer.setStyle({ fillOpacity: 0.9, weight: 2 });
+             layer.setStyle({ fillOpacity: 0.95, weight: 3 });
              if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
                 layer.bringToFront();
              }
@@ -178,17 +180,18 @@ export default function AdminRoutingPage() {
              const currentEmpId = selectedEmpIdRef.current;
              
              if (!currentEmpId) {
-               // Show current assignment info
                const route = routesRef.current.find(r => r.pincode === label);
                const emp = employees.find(ev => ev.id === route?.employee_id);
-               L.popup()
+               L.popup({ className: 'custom-popup' })
                 .setLatLng(e.latlng)
                 .setContent(`
-                  <div style="padding: 10px; font-family: sans-serif;">
-                    <b style="font-size: 14px;">${label}</b><br/>
-                    <p style="margin: 5px 0 0; font-size: 12px; color: #444;">
-                      ${emp ? `Assigned: <span style="font-weight:bold; color:${emp.color}">${emp.name}</span>` : "Unassigned"}
-                    </p>
+                  <div style="padding: 6px; font-family: 'Inter', sans-serif;">
+                    <b style="font-size: 15px; color: #0f172a; text-transform: uppercase;">${label}</b><br/>
+                    <div style="margin-top: 8px; font-size: 13px; color: #475569; display: flex; align-items: center; gap: 6px;">
+                      ${emp ? 
+                        `<div style="width:10px; height:10px; border-radius:50%; background:${emp.color}"></div> <strong style="color:#0f172a;">${emp.name}</strong>` : 
+                        "<span>Not Assigned</span>"}
+                    </div>
                   </div>
                 `)
                 .openOn(mapRef.current);
@@ -222,7 +225,6 @@ export default function AdminRoutingPage() {
   async function handleSave() {
     setIsSaving(true);
     try {
-      // Clear and Re-insert
       await (supabase as any).from('pincode_routes').delete().not('id', 'is', null);
       
       const inserts = routes.map(r => ({
@@ -235,7 +237,7 @@ export default function AdminRoutingPage() {
         if (error) throw error;
       }
       
-      alert("Changes saved to database!");
+      alert("Territories saved successfully!");
     } catch (err) {
       console.error(err);
       alert("Save failed. Check console.");
@@ -245,38 +247,50 @@ export default function AdminRoutingPage() {
   }
 
   return (
-    <AppLayout title="Franchise Routing Map">
+    <AppLayout title="Franchise Territories">
       <div className="routing-view-container">
         
-        <div className="routing-toolbar">
-           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-             <select 
-               className="select" 
-               style={{ minWidth: '180px', height: '40px' }} 
-               value={activeRegionId} 
-               onChange={e => setActiveRegionId(e.target.value as any)}
-             >
-               {Object.entries(REGION_CONFIG).map(([id, cfg]) => (
-                 <option key={id} value={id}>{cfg.name}</option>
-               ))}
-             </select>
-             <div className="zone-counter">
-               {routes.length} Locations Managed
-             </div>
-           </div>
+        {/* Modern Header Toolbar */}
+        <div className="routing-header-card">
+          <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+            <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '12px' }}>
+              <Navigation size={28} style={{ color: '#0f172a' }} />
+            </div>
+            <div>
+              <h2 className="text-display-xs" style={{ marginBottom: '4px' }}>Territory Management</h2>
+              <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.85rem' }}>Assign service areas dynamically to your technicians.</p>
+            </div>
+          </div>
 
-           <button className="btn btn-primary" onClick={handleSave} disabled={isSaving || isLoading} style={{ height: '40px', padding: '0 1.5rem' }}>
-             {isSaving ? 'Saving...' : 'Save Changes'}
-           </button>
+          <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+            <select 
+              className="select" 
+              style={{ minWidth: '200px', height: '44px', fontWeight: 700, background: '#f8fafc', border: '1px solid #e2e8f0' }} 
+              value={activeRegionId} 
+              onChange={e => setActiveRegionId(e.target.value as any)}
+            >
+              {Object.entries(REGION_CONFIG).map(([id, cfg]) => (
+                <option key={id} value={id}>{cfg.name}</option>
+              ))}
+            </select>
+            
+            <button className="btn btn-primary" onClick={handleSave} disabled={isSaving || isLoading} style={{ height: '44px', padding: '0 2rem', fontSize: '0.95rem', boxShadow: '0 4px 14px rgba(15,23,42,0.15)' }}>
+              {isSaving ? 'Synchronizing...' : 'Save Territories'}
+            </button>
+          </div>
         </div>
 
         <div className="routing-grid">
           
           <div className="franchise-sidebar">
             <div className="glass-card franchise-list-card">
-               <h3 className="text-title-sm" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                 <Users size={16} /> Select Technician
-               </h3>
+               <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                 <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                   <Users size={18} /> Available Technicians
+                 </h3>
+                 <span style={{ fontSize: '0.75rem', fontWeight: 800, background: '#e2e8f0', padding: '2px 8px', borderRadius: '10px' }}>{employees.length} Active</span>
+               </div>
+               
                <div className="franchise-scroller">
                   {employees.map(emp => {
                     const count = routes.filter(r => r.employee_id === emp.id).length;
@@ -286,13 +300,18 @@ export default function AdminRoutingPage() {
                         key={emp.id}
                         onClick={() => setSelectedEmpId(isSelected ? null : emp.id)}
                         className={`franchise-btn ${isSelected ? 'selected' : ''}`}
-                        style={{ borderLeft: `4px solid ${emp.color}` }}
+                        style={{ borderLeft: `6px solid ${emp.color}`, borderColor: isSelected ? emp.color : '#e2e8f0' }}
                       >
-                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', flex: 1 }}>
-                           <span className="emp-name" style={{ color: isSelected ? emp.color : 'inherit' }}>{emp.name}</span>
-                           <span style={{ fontSize: '0.6rem', color: 'var(--outline)', fontWeight: 800, textTransform: 'uppercase' }}>{emp.role}</span>
+                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', flex: 1 }}>
+                           <span className="emp-name" style={{ color: '#0f172a', fontSize: '0.95rem' }}>{emp.name}</span>
+                           <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{emp.role}</span>
                          </div>
-                         <span className="zone-count-pill" style={{ background: isSelected ? emp.color : 'var(--surface-highest)', color: isSelected ? 'white' : 'inherit' }}>{count}</span>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                           <span className="zone-count-pill" style={{ background: isSelected ? emp.color : '#f1f5f9', color: isSelected ? 'white' : '#475569' }}>
+                             {count} {count === 1 ? 'Zone' : 'Zones'}
+                           </span>
+                           {isSelected && <CheckCircle2 size={18} style={{ color: emp.color }} />}
+                         </div>
                       </button>
                     );
                   })}
@@ -300,26 +319,12 @@ export default function AdminRoutingPage() {
             </div>
 
             <div className="glass-card assigned-zones-card desktop-only">
-               <h3 className="text-title-sm" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                 <Layers size={16} /> Current Assignments
+               <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                 <Layers size={16} /> Data Export
                </h3>
-               <div className="zones-list">
-                 {routes.length === 0 ? (
-                   <p style={{ opacity: 0.5, fontSize: '0.75rem', textAlign: 'center', padding: '1rem' }}>No assignments yet.</p>
-                 ) : routes.map(route => {
-                   const emp = employees.find(e => e.id === route.employee_id);
-                   return (
-                     <div key={route.id} className="zone-item" style={{ borderLeft: `3px solid ${emp?.color}` }}>
-                        <div style={{ flex: 1 }}>
-                          <p style={{ fontWeight: 800, fontSize: '0.75rem', margin: 0 }}>{route.pincode}</p>
-                          <p style={{ fontSize: '0.6rem', color: emp?.color, margin: 0 }}>{emp?.name}</p>
-                        </div>
-                        <button onClick={() => handleToggle(route.pincode, route.employee_id)} className="delete-zone-btn">
-                          <Trash2 size={12} />
-                        </button>
-                     </div>
-                   );
-                 })}
+               <div style={{ padding: '1rem', background: '#f8fafc', borderRadius: '12px', textAlign: 'center' }}>
+                  <p style={{ fontSize: '0.85rem', color: '#475569', marginBottom: '1rem' }}>You have <strong>{routes.length}</strong> active mapped zones.</p>
+                  <button className="btn btn-secondary" style={{ width: '100%' }}>Export CSV Report</button>
                </div>
             </div>
           </div>
@@ -330,20 +335,20 @@ export default function AdminRoutingPage() {
              <div className="map-overlay-hint">
                 {selectedEmpId ? (
                   <>
-                    <MapIcon size={14} style={{ color: employees.find(e => e.id === selectedEmpId)?.color }} />
-                    Active: <b>{employees.find(e => e.id === selectedEmpId)?.name}</b> — Tap any zone to assign
+                    <MapIcon size={16} style={{ color: employees.find(e => e.id === selectedEmpId)?.color }} />
+                    <span style={{ fontWeight: 500 }}>Currently Assigning:</span> <b style={{ fontWeight: 800, letterSpacing: '0.02em', textTransform: 'uppercase' }}>{employees.find(e => e.id === selectedEmpId)?.name}</b> — Tap any map zone to toggle.
                   </>
                 ) : (
                   <>
-                    <Info size={14} /> 1. Select Technician → 2. Tap Map
+                    <Info size={16} /> <b>How to start:</b> Select a technician from the left menu, then tap zones on the map.
                   </>
                 )}
              </div>
 
              {isLoading && (
                <div className="map-loading-overlay">
-                  <RefreshCw size={24} className="animate-spin" />
-                  <p style={{ fontWeight: 600 }}>Loading Regions...</p>
+                  <RefreshCw size={32} className="animate-spin" style={{ color: '#0f172a' }} />
+                  <p style={{ fontWeight: 800, letterSpacing: '0.05em' }}>RENDERING MAP...</p>
                </div>
              )}
           </div>
@@ -352,48 +357,72 @@ export default function AdminRoutingPage() {
       </div>
 
       <style>{`
-        .routing-view-container { display: flex; flex-direction: column; height: calc(100vh - var(--header-height) - 1.5rem); gap: 1rem; }
-        .routing-toolbar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid var(--outline); flex-shrink: 0; }
-        .zone-counter { color: var(--primary); background: rgba(0,0,0,0.05); padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 800; }
-        .routing-grid { flex: 1; display: grid; grid-template-columns: 280px 1fr; gap: 1rem; min-height: 0; }
-        .franchise-sidebar { display: flex; flex-direction: column; gap: 1rem; min-height: 0; }
-        .franchise-list-card { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 1.25rem; }
-        .franchise-scroller { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 4px; }
-        .assigned-zones-card { height: 220px; padding: 1.25rem; display: flex; flex-direction: column; }
-        .zones-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem; }
+        .routing-view-container { display: flex; flex-direction: column; height: calc(100vh - var(--header-height) - 1.5rem); gap: 1.5rem; }
+        
+        .routing-header-card { 
+          display: flex; justify-content: space-between; align-items: center; 
+          background: white; padding: 1.25rem 2rem; border-radius: 16px; 
+          border: 1px solid var(--outline); box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+          flex-shrink: 0; 
+        }
+
+        .routing-grid { flex: 1; display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; min-height: 0; }
+        .franchise-sidebar { display: flex; flex-direction: column; gap: 1.5rem; min-height: 0; }
+        
+        .franchise-list-card { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .franchise-scroller { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 6px; }
+        .assigned-zones-card { padding: 1.5rem; display: flex; flex-direction: column; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
         
         .franchise-btn {
           display: flex; justify-content: space-between; align-items: center;
-          padding: 0.85rem 1rem; border-radius: 10px; border: 1px solid var(--outline);
-          background: white; transition: all 0.2s; cursor: pointer; text-align: left;
+          padding: 1rem 1.25rem; border-radius: 12px; border: 1px solid var(--outline);
+          background: white; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; text-align: left;
         }
-        .franchise-btn.selected { border-width: 1px; background: rgba(0,0,0,0.02); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); }
-        .emp-name { font-weight: 700; font-size: 0.85rem; }
-        .zone-count-pill { font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 10px; }
+        .franchise-btn:hover { border-color: #cbd5e1; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .franchise-btn.selected { 
+          border-width: 1px; background: #fff!important; 
+          box-shadow: 0 8px 24px rgba(0,0,0,0.06); transform: scale(1.02); z-index: 10;
+        }
+        .emp-name { font-weight: 800; font-size: 0.9rem; }
+        .zone-count-pill { font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 12px; letter-spacing: 0.05em; }
         
-        .zone-item { display: flex; justify-content: space-between; align-items: center; padding: 0.65rem; background: var(--surface-low); border-radius: 8px; }
-        .delete-zone-btn { background: none; border: none; color: var(--error); cursor: pointer; opacity: 0.4; }
-        
-        .map-view-card { flex: 1; position: relative; overflow: hidden; height: 100%; border: 1px solid var(--outline); border-radius: 16px; }
+        .map-view-card { 
+          flex: 1; position: relative; overflow: hidden; height: 100%; 
+          border: 1px solid var(--outline); border-radius: 20px; 
+          box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        /* Leaflet Overrides */
+        .leaflet-container { background: #f8fafc !important; font-family: 'Inter', sans-serif; }
+        .custom-popup .leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid var(--outline); }
+        .custom-popup .leaflet-popup-tip { box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+
         .map-overlay-hint {
-          position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
-          z-index: 1000; background: #1e293b; color: white;
-          padding: 8px 20px; border-radius: 99px; font-size: 0.75rem;
-          display: flex; align-items: center; gap: 0.6rem; backdrop-filter: blur(8px);
-          white-space: nowrap; pointer-events: none; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+          position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+          z-index: 1000; background: rgba(15, 23, 42, 0.9); color: white;
+          padding: 12px 24px; border-radius: 99px; font-size: 0.85rem;
+          display: flex; align-items: center; gap: 0.75rem; backdrop-filter: blur(12px);
+          white-space: nowrap; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+          border: 1px solid rgba(255,255,255,0.1);
         }
-        .map-loading-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.9); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; }
+
+        .map-loading-overlay { 
+          position: absolute; inset: 0; background: rgba(255,255,255,0.85); 
+          z-index: 2000; display: flex; flex-direction: column; align-items: center; 
+          justify-content: center; gap: 1rem; backdrop-filter: blur(8px);
+        }
+        
         .animate-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         @media (max-width: 1024px) {
-          .routing-view-container { height: auto; min-height: 100vh; padding-bottom: 2rem; }
+          .routing-view-container { height: auto; min-height: 100vh; padding-bottom: 2rem; gap: 1rem; }
           .routing-grid { grid-template-columns: 1fr; display: flex; flex-direction: column; }
           .franchise-sidebar { order: 2; padding: 0 1rem; }
-          .franchise-scroller { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: 0.5rem 0; gap: 0.75rem; }
-          .franchise-btn { flex: 0 0 auto; min-width: 160px; }
-          .map-view-card { order: 1; height: 480px; border-radius: 0; border: none; width: 100%; }
-          .routing-toolbar { margin: 0 1rem; }
+          .franchise-scroller { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: 0.5rem 0; gap: 1rem; }
+          .franchise-btn { flex: 0 0 auto; min-width: 220px; }
+          .map-view-card { order: 1; height: 500px; border-radius: 0; border-left: none; border-right: none; width: 100%; border-radius: 20px; }
+          .routing-header-card { margin: 0 1rem; flex-direction: column; align-items: flex-start; gap: 1rem; }
         }
       `}</style>
     </AppLayout>

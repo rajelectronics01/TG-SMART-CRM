@@ -24,6 +24,7 @@ import AdminTicketsPage from './pages/AdminTicketsPage';
 import AdminEmployeesPage from './pages/AdminEmployeesPage';
 import AdminRoutingPage from './pages/AdminRoutingPage';
 import AdminReportsPage from './pages/AdminReportsPage';
+import AdminSettingsPage from './pages/AdminSettingsPage';
 
 export default function App() {
   return (
@@ -90,6 +91,10 @@ export default function App() {
           <Route
             path="/admin/reports"
             element={<ProtectedRoute requireAdmin><AdminReportsPage /></ProtectedRoute>}
+          />
+          <Route
+            path="/admin/settings"
+            element={<ProtectedRoute requireAdmin><AdminSettingsPage /></ProtectedRoute>}
           />
 
           {/* ─── 404 Fallback ─── */}

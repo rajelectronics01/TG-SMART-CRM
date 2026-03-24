@@ -4,8 +4,9 @@ import { supabase } from '../core/supabase/client';
 import { useAuth } from '../core/auth/AuthContext';
 import type { TicketWithDetails, TicketStatus, Spare } from '../core/supabase/database.types';
 import AppLayout from '../components/AppLayout';
-import { ArrowLeft, User, Package, Smartphone } from 'lucide-react';
+import { ArrowLeft, User, Package, Smartphone, Trash2 } from 'lucide-react';
 import { sendSMS } from '../core/utils/sms';
+import { notifyTechnicianAssigned, notifyTicketResolved } from '../core/utils/email';
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   new:           { label: 'New',           className: 'badge badge-new' },
@@ -28,7 +29,7 @@ export default function TicketDetailPage() {
   
   const [ticket, setTicket] = useState<TicketWithDetails | null>(null);
   const [spares, setSpares] = useState<Spare[]>([]);
-  const [techs, setTechs] = useState<{ id: string, name: string }[]>([]);
+  const [techs, setTechs] = useState<{ id: string, name: string, email: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const [selectedTech, setSelectedTech] = useState<string>('');
@@ -71,7 +72,7 @@ export default function TicketDetailPage() {
   }
 
   async function fetchTechnicians() {
-    let query = (supabase as any).from('employees').select('id, name').eq('role', 'employee').eq('is_active', true);
+    let query = (supabase as any).from('employees').select('id, name, email').eq('role', 'employee').eq('is_active', true);
     
     if (isManager && employee?.id) {
        query = query.eq('parent_id', employee.id);
@@ -116,13 +117,34 @@ export default function TicketDetailPage() {
       const { error } = await (supabase as any).from('tickets').update(dbUpdates).eq('id', ticket.id);
       if (!error) {
         if (assignmentChanged && selectedTech) {
-          const techName = techs.find(t => t.id === selectedTech)?.name || 'a technician';
+          const tech = techs.find(t => t.id === selectedTech);
+          const techName = tech?.name || 'a technician';
           const msg = `TG SMART: Technician ${techName} has been assigned to your ticket ${ticket.ticket_number}. They will contact you shortly.`;
           await sendSMS(ticket.customers?.phone || '', msg);
+          
+          // Send Assignment Notification (To Customer & Admin)
+          if (ticket.customers?.email) {
+            await notifyTechnicianAssigned(
+              { ...ticket, customer_name: ticket.customers?.name }, 
+              ticket.customers.email, 
+              techName
+            );
+          }
         } else if (statusChanged) {
           let msg = '';
           if (selectedStatus === 'resolved') {
             msg = `TG SMART: Your ticket ${ticket.ticket_number} has been resolved. Thank you for choosing TG Service!`;
+            
+            // Send Resolution Email (To Customer & Admin)
+            await notifyTicketResolved(
+              { 
+                ...ticket, 
+                customer_name: ticket.customers?.name, 
+                service_notes: serviceNotes,
+                assigned_to_name: techs.find(t => t.id === ticket.assigned_to)?.name 
+              },
+              ticket.customers?.email
+            );
           } else if (selectedStatus === 'parts_needed' || selectedStatus === 'parts_ordered') {
             msg = `TG SMART: We require parts for ticket ${ticket.ticket_number}. Your repair will continue once parts arrive.`;
           } else if (selectedStatus === 'in_progress') {
@@ -156,6 +178,29 @@ export default function TicketDetailPage() {
       fetchSpares();
     }
     setIsAddingSpare(false);
+  }
+
+  async function handleDeleteTicket() {
+    if (!isAdmin) return;
+    const confirmed = prompt(`DANGER: Type "DELETE" to permanently erase ticket ${ticket?.ticket_number}. This cannot be undone.`);
+    if (confirmed !== 'DELETE') return;
+
+    setIsUpdating(true); // Re-use loading state
+    try {
+      // 1. Clean up related records (Spares)
+      await (supabase as any).from('spares').delete().eq('ticket_id', id);
+      
+      // 2. Delete the ticket
+      const { error } = await (supabase as any).from('tickets').delete().eq('id', id);
+      if (error) throw error;
+
+      alert('Ticket successfully erased.');
+      navigate(isAdmin ? '/admin/tickets' : '/manager/tickets');
+    } catch (err: any) {
+      alert('Deletion failed: ' + err.message);
+    } finally {
+      setIsUpdating(false);
+    }
   }
 
   if (isLoading) return <AppLayout title="Loading..."><div style={{ padding: '2rem' }}>Loading ticket...</div></AppLayout>;
@@ -300,6 +345,17 @@ export default function TicketDetailPage() {
               <button className="btn btn-primary btn-full" style={{ height: '52px', borderRadius: '12px' }} onClick={handleUpdateTicket} disabled={isUpdating}>
                 {isUpdating ? 'Uploading Data...' : 'Save Service Data'}
               </button>
+
+              {isAdmin && (
+                <button 
+                  className="btn btn-danger btn-full" 
+                  style={{ height: '48px', borderRadius: '12px', marginTop: '1rem', border: '1px solid rgba(220, 38, 38, 0.2)' }} 
+                  onClick={handleDeleteTicket} 
+                  disabled={isUpdating}
+                >
+                  <Trash2 size={16} /> Delete Ticket
+                </button>
+              )}
             </div>
           </div>
 
