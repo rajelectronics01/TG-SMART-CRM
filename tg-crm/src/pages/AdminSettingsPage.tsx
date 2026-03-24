@@ -1,6 +1,6 @@
 import AppLayout from '../components/AppLayout';
 import { useAuth } from '../core/auth/AuthContext';
-import { User, Shield, CreditCard, Bell, Key, Save } from 'lucide-react';
+import { User, Shield, CreditCard, Bell } from 'lucide-react';
 
 export default function AdminSettingsPage() {
   const { employee } = useAuth();

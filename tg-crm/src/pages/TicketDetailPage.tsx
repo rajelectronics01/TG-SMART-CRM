@@ -143,7 +143,7 @@ export default function TicketDetailPage() {
                 service_notes: serviceNotes,
                 assigned_to_name: techs.find(t => t.id === ticket.assigned_to)?.name 
               },
-              ticket.customers?.email
+              ticket.customers?.email || undefined
             );
           } else if (selectedStatus === 'parts_needed' || selectedStatus === 'parts_ordered') {
             msg = `TG SMART: We require parts for ticket ${ticket.ticket_number}. Your repair will continue once parts arrive.`;

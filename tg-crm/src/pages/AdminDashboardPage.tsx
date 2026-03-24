@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import AppLayout from '../components/AppLayout';
 import { supabase } from '../core/supabase/client';
-import { BarChart, Users, Ticket, Clock, AlertCircle, CheckCircle, TrendingUp, RefreshCw, Zap, Award } from 'lucide-react';
+import { BarChart, Users, Ticket, Clock, AlertCircle, CheckCircle, RefreshCw, Zap, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function AdminDashboardPage() {
@@ -146,7 +146,7 @@ export default function AdminDashboardPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
              {productStats.length === 0 ? (
                <p style={{textAlign: 'center', color: '#94a3b8', padding: '2rem'}}>No product data available yet.</p>
-             ) : productStats.map((p, i) => {
+             ) : productStats.map((p) => {
                const percentage = Math.round((p.count / stats.total) * 100);
                return (
                  <div key={p.name} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

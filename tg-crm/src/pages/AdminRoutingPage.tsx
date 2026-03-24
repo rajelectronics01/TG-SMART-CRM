@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import AppLayout from '../components/AppLayout';
 import { supabase } from '../core/supabase/client';
-import { Trash2, RefreshCw, Layers, Map as MapIcon, Info, Users, CheckCircle2, Navigation } from 'lucide-react';
+import { RefreshCw, Layers, Map as MapIcon, Info, Users, CheckCircle2, Navigation } from 'lucide-react';
 
 interface Employee {
   id: string;

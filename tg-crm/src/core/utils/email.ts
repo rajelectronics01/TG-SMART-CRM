@@ -8,7 +8,7 @@ const DOMAIN = window.location.host;
  */
 export async function sendEmail(toEmail: string, subject: string, htmlBody: string) {
   try {
-    const { data, error } = await (supabase as any).rpc('send_email_resend', { 
+    const { error } = await (supabase as any).rpc('send_email_resend', { 
       to_email: toEmail, 
       subject: subject,
       html_body: htmlBody
