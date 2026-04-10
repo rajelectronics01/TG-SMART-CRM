@@ -15,13 +15,11 @@ export type Json =
 export type TicketStatus =
   | 'new'
   | 'assigned'
-  | 'in_progress'
   | 'parts_needed'
-  | 'parts_ordered'
-  | 'resolved'
-  | 'cancelled';
+  | 'resolved';
 
 export type SpareStatus = 'needed' | 'ordered' | 'delivered';
+export type SpareAction = 'pending' | 'installed' | 'returned' | 'unused';
 
 export type EmployeeRole = 'employee' | 'manager' | 'admin';
 
@@ -67,6 +65,7 @@ export interface Database {
           product_model: string;
           serial_number: string | null;
           issue_description: string;
+          complainant_type: 'customer' | 'dealer' | null;
           invoice_url: string | null;
           status: TicketStatus;
           visit_date: string | null;
@@ -107,6 +106,10 @@ export interface Database {
           status: SpareStatus;
           notes: string | null;
           added_by: string;
+          assigned_to: string | null;
+          action_status: SpareAction;
+          action_note: string | null;
+          action_updated_at: string | null;
           created_at: string;
         };
         Insert: Omit<Database['public']['Tables']['spares']['Row'], 'id' | 'created_at'>;

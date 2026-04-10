@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../core/supabase/client';
-import { User, Cpu, AlertTriangle, CheckCircle, Camera, FileText, ArrowRight, ArrowLeft } from 'lucide-react';
+import { User, Cpu, AlertTriangle, CheckCircle, FileText, ArrowRight, ArrowLeft } from 'lucide-react';
 import { sendSMS } from '../core/utils/sms';
 import { notifyNewTicket, notifyTechnicianAssigned } from '../core/utils/email';
 
@@ -12,11 +12,11 @@ const PRODUCT_TYPES = [
 interface FormData {
   name: string; phone: string; email: string;
   productType: string;
+  complainantType: '' | 'customer' | 'dealer';
   productModel: string;
   serialNumber: string;
   issueDescription: string;
-  address: string; pincode: string; 
-  photos: File[];
+  address: string; pincode: string;
   invoice: File | null;
 }
 
@@ -25,23 +25,16 @@ export default function ComplaintFormPage() {
   const [step, setStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const photoInputRef = useRef<HTMLInputElement>(null);
   const invoiceInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<FormData>({
     name: '', phone: '', email: '',
-    productType: '', productModel: '', serialNumber: '',
-    issueDescription: '', address: '', pincode: '', photos: [], invoice: null,
+    productType: '', complainantType: '', productModel: '', serialNumber: '',
+    issueDescription: '', address: '', pincode: '', invoice: null,
   });
 
   function update(field: keyof FormData, value: any) {
     setForm((prev) => ({ ...prev, [field]: value }));
-  }
-
-  function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.files) {
-      update('photos', Array.from(e.target.files));
-    }
   }
 
   function handleInvoiceUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -67,17 +60,7 @@ export default function ComplaintFormPage() {
         .select('id').single();
       if (custErr) throw custErr;
 
-      // 2. Upload Photos
-      const photoUrls: string[] = [];
-      for (let i = 0; i < form.photos.length; i++) {
-        const file = form.photos[i];
-        const filename = `photos/${Date.now()}-${i}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
-        await supabase.storage.from('ticket-attachments').upload(filename, file);
-        const { data: { publicUrl } } = supabase.storage.from('ticket-attachments').getPublicUrl(filename);
-        photoUrls.push(publicUrl);
-      }
-
-      // 3. Upload Invoice
+      // 2. Upload Invoice
       let invoiceUrl: string | null = null;
       if (form.invoice) {
         const filename = `invoices/${Date.now()}-${form.invoice.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
@@ -138,8 +121,9 @@ export default function ComplaintFormPage() {
           product_model: form.productModel || null,
           serial_number: form.serialNumber || null,
           issue_description: form.issueDescription,
+          complainant_type: form.complainantType,
           status: initialStatus,
-          photos: photoUrls,
+          photos: [],
           invoice_url: invoiceUrl,
         })
         .select('*, id, ticket_number').single();
@@ -303,7 +287,16 @@ export default function ComplaintFormPage() {
                     {PRODUCT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
-                
+
+                <div className="input-group">
+                  <label className="input-label" style={{ fontWeight: 700, color: '#1e293b' }}>Complaint Type <span className="text-error">*</span></label>
+                  <select className="select" value={form.complainantType} onChange={(e) => update('complainantType', e.target.value as '' | 'customer' | 'dealer')} required style={{ height: '54px', fontSize: '1.05rem', backgroundColor: '#f8fafc', border: '2px solid transparent', fontWeight: 600 }}>
+                    <option value="" disabled>Are you Customer or Dealer?</option>
+                    <option value="customer">Customer</option>
+                    <option value="dealer">Dealer</option>
+                  </select>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="input-group">
                     <label className="input-label" style={{ fontWeight: 700, color: '#1e293b' }}>Model Number (Optional)</label>
@@ -346,27 +339,6 @@ export default function ComplaintFormPage() {
                 <div className="input-group">
                   <label className="input-label" style={{ fontWeight: 700, color: '#1e293b' }}>Describe the problem <span className="text-error">*</span></label>
                   <textarea className="input" value={form.issueDescription} onChange={(e) => update('issueDescription', e.target.value)} required style={{ minHeight: '120px', fontSize: '1.05rem', backgroundColor: '#f8fafc', border: '2px solid transparent', padding: '1rem' }} placeholder="E.g. The AC is blowing warm air instead of cooling..." />
-                </div>
-
-                <div className="input-group">
-                  <label className="input-label" style={{ fontWeight: 700, color: '#1e293b' }}>Upload Issue Photos <span style={{opacity:0.6, fontWeight:500}}>(Optional)</span></label>
-                  <input type="file" ref={photoInputRef} onChange={handlePhotoUpload} accept="image/*" multiple style={{ display: 'none' }} />
-                  <div 
-                    onClick={() => photoInputRef.current?.click()}
-                    style={{ 
-                      border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '1.5rem', textAlign: 'center', 
-                      cursor: 'pointer', background: '#f8fafc', transition: 'all 0.2s',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem'
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.borderColor = '#0f172a'}
-                    onMouseOut={(e) => e.currentTarget.style.borderColor = '#cbd5e1'}
-                  >
-                    <Camera size={32} style={{ color: form.photos.length > 0 ? '#16a34a' : '#94a3b8' }} />
-                    <p style={{ fontWeight: 700, color: form.photos.length > 0 ? '#16a34a' : '#475569', fontSize: '0.9rem' }}>
-                      {form.photos.length > 0 ? `${form.photos.length} photos selected` : 'Tap to take or choose photos'}
-                    </p>
-                    {!form.photos.length && <p style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Helpful for visible damage</p>}
-                  </div>
                 </div>
 
                 <div className="divider" style={{ margin: '0.5rem 0' }} />

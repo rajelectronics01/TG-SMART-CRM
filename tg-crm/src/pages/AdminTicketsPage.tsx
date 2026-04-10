@@ -1,24 +1,23 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../core/supabase/client';
-import type { Ticket, Customer, Employee } from '../core/supabase/database.types';
-import AppLayout from '../components/AppLayout';
-import { Search, Filter, Loader2 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { Search, Filter, Loader2, Share2 } from 'lucide-react';
+import { supabase } from '../core/supabase/client';
+import type { Ticket, Customer, Employee, TicketStatus } from '../core/supabase/database.types';
+import { STATUS_LABELS } from '../core/constants';
+import AppLayout from '../components/AppLayout';
 
 type FullTicket = Ticket & {
   customers: Customer | null;
   employees?: Employee | null;
 };
 
-const STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  new:           { label: 'New',           className: 'badge badge-new' },
-  assigned:      { label: 'Assigned',      className: 'badge badge-assigned' },
-  in_progress:   { label: 'In Progress',   className: 'badge badge-in-progress' },
-  parts_needed:  { label: 'Parts Needed',  className: 'badge badge-parts-needed' },
-  parts_ordered: { label: 'Parts Ordered', className: 'badge badge-parts-ordered' },
-  resolved:      { label: 'Resolved',      className: 'badge badge-resolved' },
-  cancelled:     { label: 'Cancelled',     className: 'badge badge-cancelled' },
-};
+const STATUS_OPTIONS: Array<{ value: 'all' | TicketStatus; label: string }> = [
+  { value: 'all', label: 'All Statuses' },
+  { value: 'new', label: 'New (Unassigned)' },
+  { value: 'assigned', label: 'Assigned' },
+  { value: 'parts_needed', label: 'Parts Needed' },
+  { value: 'resolved', label: 'Resolved' },
+];
 
 export default function AdminTicketsPage() {
   const [tickets, setTickets] = useState<FullTicket[]>([]);
@@ -51,21 +50,41 @@ export default function AdminTicketsPage() {
     setIsLoading(false);
   }
 
-  const filteredTickets = tickets.filter(t => {
+  async function handleShareTicket(ticket: FullTicket) {
+    const ticketUrl = `${window.location.origin}/track/${ticket.ticket_number}`;
+    const shareText = `Ticket ${ticket.ticket_number} • ${ticket.customers?.name || 'Customer'} • ${ticketUrl}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Ticket ${ticket.ticket_number}`,
+          text: shareText,
+          url: ticketUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareText);
+        alert('Ticket share link copied.');
+      }
+    } catch (err) {
+      console.error('Share failed:', err);
+    }
+  }
+
+  const filteredTickets = tickets.filter((ticket) => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
-    const cust = t.customers;
+    const customer = ticket.customers;
     return (
-      t.ticket_number.toLowerCase().includes(term) ||
-      (cust?.name || '').toLowerCase().includes(term) ||
-      (cust?.phone || '').includes(term) ||
-      t.product_type.toLowerCase().includes(term)
+      ticket.ticket_number.toLowerCase().includes(term) ||
+      (customer?.name || '').toLowerCase().includes(term) ||
+      (customer?.phone || '').includes(term) ||
+      ticket.product_type.toLowerCase().includes(term)
     );
   });
 
   function formatTimeAgo(dateString: string) {
-    const d = new Date(dateString);
-    const ms = Date.now() - d.getTime();
+    const date = new Date(dateString);
+    const ms = Date.now() - date.getTime();
     const days = Math.floor(ms / (1000 * 60 * 60 * 24));
     if (days === 0) return 'Today';
     if (days === 1) return 'Yesterday';
@@ -74,7 +93,6 @@ export default function AdminTicketsPage() {
 
   return (
     <AppLayout title="All Tickets Dashboard">
-
       <div className="glass-card" style={{ padding: '1rem', marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', flex: '1 1 300px' }}>
@@ -82,29 +100,21 @@ export default function AdminTicketsPage() {
             <input
               type="text"
               className="input"
-              placeholder="Search ID, customer, phone..."
+              placeholder="Search ticket, customer, phone..."
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
               style={{ paddingLeft: '2.5rem', height: '44px' }}
             />
           </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: '1 1 200px' }}>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: '1 1 220px' }}>
             <Filter size={16} style={{ color: 'var(--on-surface-variant)' }} />
-            <select
-              className="select"
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              style={{ height: '44px' }}
-            >
-              <option value="all">All Statuses</option>
-              <option value="new">New (Unassigned)</option>
-              <option value="assigned">Assigned</option>
-              <option value="in_progress">In Progress</option>
-              <option value="parts_needed">Parts Needed</option>
-              <option value="parts_ordered">Parts Ordered</option>
-              <option value="resolved">Resolved</option>
-              <option value="cancelled">Cancelled</option>
+            <select className="select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ height: '44px' }}>
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -137,42 +147,44 @@ export default function AdminTicketsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredTickets.map(t => (
-                  <tr key={t.id}>
-                    <td data-label="Ticket Info">
-                      <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '0.95rem' }}>{t.ticket_number}</div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)' }}>
-                        {new Date(t.created_at).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td data-label="Customer">
-                      <div style={{ fontWeight: 600 }}>{t.customers?.name}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>+91 {t.customers?.phone}</div>
-                    </td>
-                    <td data-label="Product">
-                      <div style={{ fontWeight: 500 }}>{t.product_type}</div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--outline)' }}>{t.product_model || 'N/A'}</div>
-                    </td>
-                    <td data-label="Status & Tech">
-                      <div style={{ marginBottom: '0.25rem' }}>
-                        <span className={STATUS_LABELS[t.status]?.className ?? 'badge'}>
-                          {STATUS_LABELS[t.status]?.label ?? t.status}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)' }}>
-                        {t.employees?.name || 'Unassigned'}
-                      </div>
-                    </td>
-                    <td data-label="Aging">
-                      <div style={{ fontSize: '0.8rem' }}>{formatTimeAgo(t.created_at)}</div>
-                    </td>
-                    <td data-label="Action">
-                      <Link to={`/admin/tickets/${t.id}`} className="btn btn-secondary btn-sm btn-full-mobile" style={{ height: '36px' }}>
-                        Manage
-                      </Link>
-                    </td>
-                  </tr>
-                ))
+                filteredTickets.map((ticket) => {
+                  const statusMeta = STATUS_LABELS[ticket.status as TicketStatus] || { label: ticket.status, className: 'badge' };
+                  return (
+                    <tr key={ticket.id}>
+                      <td data-label="Ticket Info">
+                        <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '0.95rem' }}>{ticket.ticket_number}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)' }}>{new Date(ticket.created_at).toLocaleDateString()}</div>
+                      </td>
+                      <td data-label="Customer">
+                        <div style={{ fontWeight: 600 }}>{ticket.customers?.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>+91 {ticket.customers?.phone}</div>
+                      </td>
+                      <td data-label="Product">
+                        <div style={{ fontWeight: 500 }}>{ticket.product_type}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--outline)' }}>{ticket.product_model || 'N/A'}</div>
+                      </td>
+                      <td data-label="Status & Tech">
+                        <div style={{ marginBottom: '0.25rem' }}>
+                          <span className={statusMeta.className}>{statusMeta.label}</span>
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)' }}>{ticket.employees?.name || 'Unassigned'}</div>
+                      </td>
+                      <td data-label="Aging">
+                        <div style={{ fontSize: '0.8rem' }}>{formatTimeAgo(ticket.created_at)}</div>
+                      </td>
+                      <td data-label="Action">
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <Link to={`/admin/tickets/${ticket.id}`} className="btn btn-secondary btn-sm" style={{ height: '36px' }}>
+                            Manage
+                          </Link>
+                          <button className="btn btn-secondary btn-sm" type="button" style={{ height: '36px' }} onClick={() => handleShareTicket(ticket)}>
+                            <Share2 size={14} /> Share
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

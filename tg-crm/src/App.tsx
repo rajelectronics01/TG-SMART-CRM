@@ -12,6 +12,7 @@ import TicketConfirmationPage from './pages/TicketConfirmationPage';
 // Employee/Staff pages
 import EmployeeDashboardPage from './pages/EmployeeDashboardPage';
 import TicketDetailPage from './pages/TicketDetailPage';
+import InternalCreateTicketPage from './pages/InternalCreateTicketPage';
 
 // Manager pages
 import ManagerDashboardPage from './pages/ManagerDashboardPage';
@@ -45,6 +46,10 @@ export default function App() {
             element={<ProtectedRoute><EmployeeDashboardPage /></ProtectedRoute>}
           />
           <Route
+            path="/ticket/new"
+            element={<ProtectedRoute><InternalCreateTicketPage /></ProtectedRoute>}
+          />
+          <Route
             path="/ticket/:id"
             element={<ProtectedRoute><TicketDetailPage /></ProtectedRoute>}
           />
@@ -57,6 +62,10 @@ export default function App() {
           <Route
             path="/manager/tickets"
             element={<ProtectedRoute requireManager><ManagerTicketsPage /></ProtectedRoute>}
+          />
+          <Route
+            path="/manager/tickets/new"
+            element={<ProtectedRoute requireManager><InternalCreateTicketPage /></ProtectedRoute>}
           />
           <Route
             path="/manager/tickets/:id"
@@ -75,6 +84,10 @@ export default function App() {
           <Route
             path="/admin/tickets"
             element={<ProtectedRoute requireAdmin><AdminTicketsPage /></ProtectedRoute>}
+          />
+          <Route
+            path="/admin/tickets/new"
+            element={<ProtectedRoute requireAdmin><InternalCreateTicketPage /></ProtectedRoute>}
           />
           <Route
             path="/admin/tickets/:id"

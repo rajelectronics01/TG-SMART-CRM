@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from '../core/supabase/client';
 import {
   LayoutDashboard, Ticket, User,
-  LogOut, Bell, Settings, ChevronRight, MapPin, Users
+  LogOut, Bell, Settings, ChevronRight, MapPin, Users, PlusCircle
 } from "lucide-react";
 import { useAuth } from "../core/auth/AuthContext";
 
@@ -14,17 +14,20 @@ interface AppLayoutProps {
 
 const employeeNav = [
   { to: "/dashboard", label: "My Tickets", icon: <Ticket size={18} /> },
+  { to: "/ticket/new", label: "Create Ticket", icon: <PlusCircle size={18} /> },
 ];
 
 const managerNav = [
   { to: "/manager", label: "Area Overview", icon: <LayoutDashboard size={18} /> },
   { to: "/manager/tickets", label: "Regional Tickets", icon: <Ticket size={18} /> },
+  { to: "/manager/tickets/new", label: "Create Ticket", icon: <PlusCircle size={18} /> },
   { to: "/manager/technicians", label: "My Team", icon: <Users size={18} /> },
 ];
 
 const adminNav = [
   { to: "/admin", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
   { to: "/admin/tickets", label: "All Tickets", icon: <Ticket size={18} /> },
+  { to: "/admin/tickets/new", label: "Create Ticket", icon: <PlusCircle size={18} /> },
   { to: "/admin/employees", label: "Employees", icon: <User size={18} /> },
   { to: "/admin/routing", label: "Franchise Map", icon: <MapPin size={18} /> },
   { to: "/admin/reports", label: "Reports", icon: <ChevronRight size={18} /> },
