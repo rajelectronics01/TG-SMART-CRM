@@ -91,6 +91,13 @@ export default function AdminTicketsPage() {
     return `${days} days ago`;
   }
 
+  function getRaisedBy(ticket: FullTicket) {
+    if (ticket.complainant_type === 'dealer') {
+      return `Dealer — ${ticket.dealer_name || 'Unknown dealer'}`;
+    }
+    return 'Customer';
+  }
+
   return (
     <AppLayout title="All Tickets Dashboard">
       <div className="glass-card" style={{ padding: '1rem', marginBottom: '1.5rem' }}>
@@ -152,12 +159,23 @@ export default function AdminTicketsPage() {
                   return (
                     <tr key={ticket.id}>
                       <td data-label="Ticket Info">
-                        <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '0.95rem' }}>{ticket.ticket_number}</div>
+                        <Link
+                          to={`/admin/tickets/${ticket.id}`}
+                          style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '0.95rem', textDecoration: 'none' }}
+                        >
+                          {ticket.ticket_number}
+                        </Link>
                         <div style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)' }}>{new Date(ticket.created_at).toLocaleDateString()}</div>
                       </td>
                       <td data-label="Customer">
-                        <div style={{ fontWeight: 600 }}>{ticket.customers?.name}</div>
+                        <Link
+                          to={`/admin/tickets/${ticket.id}`}
+                          style={{ fontWeight: 600, color: 'var(--on-surface)', textDecoration: 'none' }}
+                        >
+                          {ticket.customers?.name}
+                        </Link>
                         <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>+91 {ticket.customers?.phone}</div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--outline)' }}>Raised by: {getRaisedBy(ticket)}</div>
                       </td>
                       <td data-label="Product">
                         <div style={{ fontWeight: 500 }}>{ticket.product_type}</div>

@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from '../core/supabase/client';
 import {
   LayoutDashboard, Ticket, User,
-  LogOut, Bell, Settings, ChevronRight, MapPin, Users, PlusCircle
+  LogOut, Bell, Settings, ChevronRight, MapPin, Users, PlusCircle, Package
 } from "lucide-react";
 import { useAuth } from "../core/auth/AuthContext";
 
@@ -27,6 +27,7 @@ const managerNav = [
 const adminNav = [
   { to: "/admin", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
   { to: "/admin/tickets", label: "All Tickets", icon: <Ticket size={18} /> },
+  { to: "/admin/parts", label: "Parts Tracking", icon: <Package size={18} /> },
   { to: "/admin/tickets/new", label: "Create Ticket", icon: <PlusCircle size={18} /> },
   { to: "/admin/employees", label: "Employees", icon: <User size={18} /> },
   { to: "/admin/routing", label: "Franchise Map", icon: <MapPin size={18} /> },

@@ -27,6 +27,13 @@ function normalizePhone(phone: string | null | undefined) {
   return (phone || '').replace(/\D/g, '').slice(-10);
 }
 
+function getRaisedBy(ticket: TicketWithDetails) {
+  if (ticket.complainant_type === 'dealer') {
+    return `Dealer — ${ticket.dealer_name || 'Unknown dealer'}`;
+  }
+  return 'Customer';
+}
+
 export default function TicketDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -343,6 +350,10 @@ export default function TicketDetailPage() {
                     <MessageCircle size={14} /> WhatsApp
                   </button>
                 </div>
+              </div>
+              <div>
+                <p style={{ fontSize: '0.7rem', color: 'var(--outline)', margin: '0 0 0.25rem 0', fontWeight: 700, textTransform: 'uppercase' }}>Raised By</p>
+                <p style={{ margin: 0, fontWeight: 600 }}>{getRaisedBy(ticket)}</p>
               </div>
               <div className="md-col-span-2">
                 <p style={{ fontSize: '0.7rem', color: 'var(--outline)', margin: '0 0 0.25rem 0', fontWeight: 700, textTransform: 'uppercase' }}>Site Address</p>

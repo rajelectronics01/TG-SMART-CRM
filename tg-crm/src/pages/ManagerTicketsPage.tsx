@@ -24,6 +24,13 @@ function normalizeStatus(status: string | null | undefined): TicketStatus {
   return 'new';
 }
 
+function getRaisedBy(ticket: TicketWithDetails) {
+  if (ticket.complainant_type === 'dealer') {
+    return `Dealer — ${ticket.dealer_name || 'Unknown dealer'}`;
+  }
+  return 'Customer';
+}
+
 export default function ManagerTicketsPage() {
   const { employee } = useAuth();
   const [tickets, setTickets] = useState<TicketWithDetails[]>([]);
@@ -146,6 +153,7 @@ export default function ManagerTicketsPage() {
                   <div className="customer-col">
                     <div style={{ fontWeight: 700 }}>{ticket.customers?.name || 'Unknown'}</div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--on-surface-variant)' }}>+91 {ticket.customers?.phone || 'N/A'}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--outline)', marginTop: '2px' }}>Raised by: {getRaisedBy(ticket)}</div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--on-surface-variant)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
                       <MapPin size={12} /> {ticket.customers?.pincode || 'N/A'}
                     </div>

@@ -17,6 +17,13 @@ function normalizeStatus(status: string): TicketStatus {
   return 'new';
 }
 
+function getRaisedBy(ticket: TicketWithDetails) {
+  if (ticket.complainant_type === 'dealer') {
+    return `Dealer — ${ticket.dealer_name || 'Unknown dealer'}`;
+  }
+  return 'Customer';
+}
+
 export default function EmployeeDashboardPage() {
   const { employee } = useAuth();
   const [tickets, setTickets] = useState<TicketWithDetails[]>([]);
@@ -147,6 +154,7 @@ export default function EmployeeDashboardPage() {
                       <td data-label="Customer">
                         <div style={{ fontWeight: 600 }}>{ticket.customers?.name}</div>
                         <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)' }}>+91 {ticket.customers?.phone}</div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--outline)' }}>Raised by: {getRaisedBy(ticket)}</div>
                       </td>
                       <td data-label="Product">
                         <div style={{ fontSize: '0.9rem' }}>{ticket.product_type}</div>

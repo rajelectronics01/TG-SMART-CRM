@@ -13,6 +13,7 @@ interface FormData {
   name: string; phone: string; email: string;
   productType: string;
   complainantType: '' | 'customer' | 'dealer';
+  dealerName: string;
   productModel: string;
   serialNumber: string;
   issueDescription: string;
@@ -29,7 +30,7 @@ export default function ComplaintFormPage() {
 
   const [form, setForm] = useState<FormData>({
     name: '', phone: '', email: '',
-    productType: '', complainantType: '', productModel: '', serialNumber: '',
+    productType: '', complainantType: '', dealerName: '', productModel: '', serialNumber: '',
     issueDescription: '', address: '', pincode: '', invoice: null,
   });
 
@@ -45,13 +46,24 @@ export default function ComplaintFormPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError('');
+
+    if (step === 1 && form.complainantType === 'dealer' && !form.dealerName.trim()) {
+      setError('Dealer name is required when complaint type is Dealer.');
+      return;
+    }
+
     if (step < 2) {
       setStep(step + 1);
       return;
     }
 
+    if (form.complainantType === 'dealer' && !form.dealerName.trim()) {
+      setError('Dealer name is required when complaint type is Dealer.');
+      return;
+    }
+
     setIsLoading(true);
-    setError('');
     try {
       // 1. Upsert Customer
       const { data: customer, error: custErr } = await (supabase as any)
@@ -122,6 +134,7 @@ export default function ComplaintFormPage() {
           serial_number: form.serialNumber || null,
           issue_description: form.issueDescription,
           complainant_type: form.complainantType,
+          dealer_name: form.complainantType === 'dealer' ? form.dealerName.trim() : null,
           status: initialStatus,
           photos: [],
           invoice_url: invoiceUrl,
@@ -290,12 +303,37 @@ export default function ComplaintFormPage() {
 
                 <div className="input-group">
                   <label className="input-label" style={{ fontWeight: 700, color: '#1e293b' }}>Complaint Type <span className="text-error">*</span></label>
-                  <select className="select" value={form.complainantType} onChange={(e) => update('complainantType', e.target.value as '' | 'customer' | 'dealer')} required style={{ height: '54px', fontSize: '1.05rem', backgroundColor: '#f8fafc', border: '2px solid transparent', fontWeight: 600 }}>
+                  <select
+                    className="select"
+                    value={form.complainantType}
+                    onChange={(e) => {
+                      const nextType = e.target.value as '' | 'customer' | 'dealer';
+                      update('complainantType', nextType);
+                      if (nextType !== 'dealer') update('dealerName', '');
+                    }}
+                    required
+                    style={{ height: '54px', fontSize: '1.05rem', backgroundColor: '#f8fafc', border: '2px solid transparent', fontWeight: 600 }}
+                  >
                     <option value="" disabled>Are you Customer or Dealer?</option>
                     <option value="customer">Customer</option>
                     <option value="dealer">Dealer</option>
                   </select>
                 </div>
+
+                {form.complainantType === 'dealer' && (
+                  <div className="input-group">
+                    <label className="input-label" style={{ fontWeight: 700, color: '#1e293b' }}>Dealer Name <span className="text-error">*</span></label>
+                    <input
+                      className="input"
+                      type="text"
+                      value={form.dealerName}
+                      onChange={(e) => update('dealerName', e.target.value)}
+                      required={form.complainantType === 'dealer'}
+                      placeholder="e.g. ABC Appliances"
+                      style={{ height: '54px', fontSize: '1.05rem', backgroundColor: '#f8fafc', border: '2px solid transparent' }}
+                    />
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="input-group">

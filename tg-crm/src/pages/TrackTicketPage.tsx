@@ -16,6 +16,13 @@ const STATUS_LABELS: Record<string, { label: string; className: string }> = {
 
 const ALL_STATUSES = ['new','assigned','in_progress','parts_needed','parts_ordered','resolved','cancelled'];
 
+function getRaisedBy(ticket: Ticket) {
+  if (ticket.complainant_type === 'dealer') {
+    return `Dealer — ${ticket.dealer_name || 'Unknown dealer'}`;
+  }
+  return 'Customer';
+}
+
 export default function TrackTicketPage() {
   const { ticketId } = useParams<{ ticketId?: string }>();
   const navigate = useNavigate();
@@ -154,6 +161,7 @@ export default function TrackTicketPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
               {[
                 { label: 'Customer', value: ticket.customers?.name },
+                { label: 'Raised By', value: getRaisedBy(ticket) },
                 { label: 'Product', value: `${ticket.product_type} – ${ticket.product_brand}` },
                 { label: 'Raised On', value: new Date(ticket.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) },
                 { label: 'Last Updated', value: new Date(ticket.updated_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) },

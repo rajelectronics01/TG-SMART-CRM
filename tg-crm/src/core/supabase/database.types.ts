@@ -66,6 +66,7 @@ export interface Database {
           serial_number: string | null;
           issue_description: string;
           complainant_type: 'customer' | 'dealer' | null;
+          dealer_name: string | null;
           invoice_url: string | null;
           status: TicketStatus;
           visit_date: string | null;

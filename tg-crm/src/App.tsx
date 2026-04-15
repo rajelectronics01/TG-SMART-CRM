@@ -25,6 +25,7 @@ import AdminTicketsPage from './pages/AdminTicketsPage';
 import AdminEmployeesPage from './pages/AdminEmployeesPage';
 import AdminRoutingPage from './pages/AdminRoutingPage';
 import AdminReportsPage from './pages/AdminReportsPage';
+import AdminPartsTrackingPage from './pages/AdminPartsTrackingPage';
 import AdminSettingsPage from './pages/AdminSettingsPage';
 
 export default function App() {
@@ -92,6 +93,10 @@ export default function App() {
           <Route
             path="/admin/tickets/:id"
             element={<ProtectedRoute requireAdmin><TicketDetailPage /></ProtectedRoute>}
+          />
+          <Route
+            path="/admin/parts"
+            element={<ProtectedRoute requireAdmin><AdminPartsTrackingPage /></ProtectedRoute>}
           />
           <Route
             path="/admin/employees"
