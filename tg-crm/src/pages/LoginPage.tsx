@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../core/supabase/client';
-import { Shield, Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { Shield, Eye, EyeOff, Lock, Mail, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../core/auth/AuthContext';
 
 type LoginMethod = 'password' | 'otp';
@@ -29,6 +29,13 @@ export default function LoginPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(() => {
+    return window.localStorage.getItem('remember_me') !== 'false';
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem('remember_me', rememberMe ? 'true' : 'false');
+  }, [rememberMe]);
 
   async function handleEmailSignIn(e: React.FormEvent) {
     e.preventDefault();
@@ -92,7 +99,24 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="public-light-theme login-page">
+    <div className="public-light-theme login-page" style={{ position: 'relative' }}>
+      
+      {/* Return Navigation */}
+      <div style={{ position: 'absolute', top: '1.5rem', left: '1.5rem' }}>
+        <button 
+          onClick={() => navigate('/')} 
+          className="btn btn-ghost" 
+          style={{ 
+            background: 'white', border: '1px solid var(--outline)', 
+            borderRadius: '99px', padding: '0.5rem 1rem', 
+            fontSize: '0.85rem', fontWeight: 700,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          }}
+        >
+          <ArrowLeft size={16} /> Back to Portal
+        </button>
+      </div>
+
       <div className="glass-card login-card">
         
         {/* Logo Section */}
@@ -160,6 +184,18 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              <input 
+                type="checkbox" 
+                id="rememberMePassword" 
+                checked={rememberMe} 
+                onChange={(e) => setRememberMe(e.target.checked)}
+                style={{ width: '1rem', height: '1rem', accentColor: 'var(--primary)' }}
+              />
+              <label htmlFor="rememberMePassword" style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)', cursor: 'pointer', userSelect: 'none' }}>
+                Remember me for 30 days
+              </label>
+            </div>
             <button type="submit" className="btn btn-primary btn-lg btn-full" disabled={isLoading} style={{ height: '56px', borderRadius: 'var(--radius-lg)' }}>
               {isLoading ? 'Processing...' : 'Secure Login'}
             </button>
@@ -190,6 +226,18 @@ export default function LoginPage() {
                   <input key={i} id={`otp-${i}`} type="text" inputMode="numeric" maxLength={1} value={digit} onChange={(e) => handleOtpInput(e.target.value, i)} className="input" style={{ width: '44px', height: '56px', textAlign: 'center', fontWeight: 800, fontSize: '1.25rem', border: '1px solid var(--outline)' }} />
                 ))}
               </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+              <input 
+                type="checkbox" 
+                id="rememberMeOtp" 
+                checked={rememberMe} 
+                onChange={(e) => setRememberMe(e.target.checked)}
+                style={{ width: '1rem', height: '1rem', accentColor: 'var(--primary)' }}
+              />
+              <label htmlFor="rememberMeOtp" style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)', cursor: 'pointer', userSelect: 'none' }}>
+                Remember me for 30 days
+              </label>
             </div>
             <button type="submit" className="btn btn-primary btn-lg btn-full" disabled={isLoading} style={{ height: '56px', borderRadius: 'var(--radius-lg)' }}>
               {isLoading ? 'Confirming...' : 'Verify Login Code'}

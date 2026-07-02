@@ -148,13 +148,31 @@ export default function AdminEmployeesPage() {
   }
 
   async function deleteEmployee(emp: Employee) {
-    const confirmDelete = prompt(`DANGER: Type "DELETE" to permanently erase ${emp.name} from the system.`);
+    const confirmDelete = prompt(`DANGER: Type "DELETE" to permanently erase ${emp.name} from the system. This will unassign all their current tickets and routes.`);
     if (confirmDelete !== 'DELETE') return;
 
     setIsLoading(true);
     try {
+      // 1. Handle Dependencies: Clear this employee from related records
+      // Clear from Tickets (Primary Technician)
+      await (supabase as any).from('tickets').update({ assigned_to: null }).eq('assigned_to', emp.id);
+
+      // Clear from Tickets (Manager field)
+      await (supabase as any).from('tickets').update({ manager_id: null }).eq('manager_id', emp.id);
+
+      // Clear from Spares requirement records
+      await (supabase as any).from('spares').update({ added_by: null }).eq('added_by', emp.id);
+
+      // Clear from Pincode Routes
+      await (supabase as any).from('pincode_routes').delete().eq('employee_id', emp.id);
+
+      // Clear from Subordinates (set their manager to null)
+      await (supabase as any).from('employees').update({ parent_id: null }).eq('parent_id', emp.id);
+
+      // 2. Delete employee record + auth user together, server-side (secure Edge Function)
       await callAdminAction({ action: 'delete', target_id: emp.id });
-      alert('Employee permanently deleted.');
+
+      alert('Employee permanently deleted and cleanup performed.');
       fetchEmployees();
     } catch (err: any) {
       alert('Error deleting employee: ' + err.message);

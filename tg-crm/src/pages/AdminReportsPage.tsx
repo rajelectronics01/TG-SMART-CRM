@@ -8,6 +8,8 @@ type ReportTicket = {
   ticket_number: string;
   product_type: string;
   status: string;
+  complainant_type: 'customer' | 'dealer' | null;
+  dealer_name: string | null;
   created_at: string;
   updated_at: string;
   customers: { name: string; phone: string; address: string; pincode: string } | null;
@@ -55,10 +57,17 @@ export default function AdminReportsPage() {
     }
   }
 
+  function getRaisedBy(ticket: ReportTicket) {
+    if (ticket.complainant_type === 'dealer') {
+      return 'Dealer';
+    }
+    return 'Customer';
+  }
+
   function handleExportCSV() {
     if (tickets.length === 0) return;
 
-    const headers = ['Ticket #', 'Date', 'Customer', 'Phone', 'Address', 'Pincode', 'Product', 'Status', 'Technician', 'Service Notes'];
+    const headers = ['Ticket #', 'Date', 'Customer', 'Phone', 'Address', 'Pincode', 'Raised By', 'Dealer Name', 'Product', 'Status', 'Technician', 'Service Notes'];
     const rows = tickets.map(t => [
       t.ticket_number,
       new Date(t.created_at).toLocaleDateString(),
@@ -66,6 +75,8 @@ export default function AdminReportsPage() {
       t.customers?.phone || '',
       t.customers?.address || '',
       t.customers?.pincode || '',
+      getRaisedBy(t),
+      t.dealer_name || '',
       t.product_type,
       t.status,
       t.employees?.name || 'Unassigned',
@@ -74,10 +85,17 @@ export default function AdminReportsPage() {
 
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(','))
+      ...rows.map(row => row.map(cell => {
+        const val = (cell || '').toString().replace(/"/g, '""');
+        // Excel-friendly formatting for numbers and codes
+        if (val.length > 8 && /^\d+$/.test(val)) return `="${val}"`; 
+        return `"${val}"`;
+      }).join(','))
     ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Add UTF8 BOM for Excel to recognize encoding and preserve phone/dates
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -144,6 +162,7 @@ export default function AdminReportsPage() {
                     <tr>
                        <th>Ticket & Date</th>
                        <th>Customer Data</th>
+                       <th>Raised By</th>
                        <th>Status</th>
                        <th>SLA Health</th>
                        <th>Technician</th>
@@ -151,9 +170,9 @@ export default function AdminReportsPage() {
                  </thead>
                  <tbody>
                     {isLoading ? (
-                      <tr><td colSpan={5} style={{ padding: '4rem', textAlign: 'center' }}><Clock className="animate-spin" size={32} style={{ margin: '0 auto', opacity: 0.1 }} /></td></tr>
+                      <tr><td colSpan={6} style={{ padding: '4rem', textAlign: 'center' }}><Clock className="animate-spin" size={32} style={{ margin: '0 auto', opacity: 0.1 }} /></td></tr>
                     ) : tickets.length === 0 ? (
-                      <tr><td colSpan={5} style={{ padding: '4rem', textAlign: 'center', opacity: 0.4 }}>No tickets found in this range.</td></tr>
+                      <tr><td colSpan={6} style={{ padding: '4rem', textAlign: 'center', opacity: 0.4 }}>No tickets found in this range.</td></tr>
                     ) : (
                       tickets.map(t => {
                         const sla = getSLAStatus(t);
@@ -166,6 +185,12 @@ export default function AdminReportsPage() {
                              <td data-label="Customer Data">
                                 <div style={{ fontWeight: 600 }}>{t.customers?.name || '---'}</div>
                                 <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>{t.customers?.address || ''}</div>
+                             </td>
+                             <td data-label="Raised By">
+                                <div style={{ fontWeight: 600 }}>{getRaisedBy(t)}</div>
+                                {t.complainant_type === 'dealer' && (
+                                  <div style={{ fontSize: '0.72rem', opacity: 0.7 }}>{t.dealer_name || 'Unknown dealer'}</div>
+                                )}
                              </td>
                              <td data-label="Status">
                                 <span className={`badge badge-${t.status}`}>
