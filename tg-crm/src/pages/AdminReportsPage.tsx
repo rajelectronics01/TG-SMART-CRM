@@ -159,20 +159,20 @@ export default function AdminReportsPage() {
                         const sla = getSLAStatus(t);
                         return (
                           <tr key={t.id} style={sla === 'delayed' ? { background: 'rgba(239, 68, 68, 0.05)' } : {}}>
-                             <td>
+                             <td data-label="Ticket & Date">
                                 <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '0.9rem' }}>#{t.ticket_number}</div>
                                 <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>{new Date(t.created_at).toLocaleDateString()}</div>
                              </td>
-                             <td>
+                             <td data-label="Customer Data">
                                 <div style={{ fontWeight: 600 }}>{t.customers?.name || '---'}</div>
                                 <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>{t.customers?.address || ''}</div>
                              </td>
-                             <td>
+                             <td data-label="Status">
                                 <span className={`badge badge-${t.status}`}>
                                    {t.status}
                                 </span>
                              </td>
-                             <td>
+                             <td data-label="SLA Health">
                                 {sla === 'delayed' ? (
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ef4444', fontWeight: 700, fontSize: '0.75rem' }}>
                                      <AlertCircle size={14} /> Delayed (&gt;48h)
@@ -181,7 +181,7 @@ export default function AdminReportsPage() {
                                   <div style={{ color: 'var(--success)', fontWeight: 600, fontSize: '0.75rem' }}>Within SLA</div>
                                 )}
                              </td>
-                             <td>{t.employees?.name || <i style={{ opacity: 0.5 }}>Unassigned</i>}</td>
+                             <td data-label="Technician">{t.employees?.name || <i style={{ opacity: 0.5 }}>Unassigned</i>}</td>
                           </tr>
                         );
                       })

@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import AppLayout from '../components/AppLayout';
 import { supabase } from '../core/supabase/client';
-import { createClient } from '@supabase/supabase-js';
 import type { Employee } from '../core/supabase/database.types';
 import { UserPlus, Shield, Key, Copy, CheckCircle, RefreshCw, Smartphone, Mail, X, Edit, Power, Trash2 } from 'lucide-react';
 
-const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-const adminAuthClient = serviceKey 
-  ? createClient(import.meta.env.VITE_SUPABASE_URL, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } })
-  : null;
+async function callAdminAction(body: Record<string, unknown>) {
+  const { data, error } = await supabase.functions.invoke('admin-user-actions', { body });
+  if (error) throw new Error(error.message || 'Admin action failed');
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
 
 export default function AdminEmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -105,42 +106,26 @@ export default function AdminEmployeesPage() {
 
         if (dbError) throw dbError;
 
-        // OPTIONAL: UPDATE PASSWORD IN AUTH
+        // OPTIONAL: UPDATE PASSWORD IN AUTH (via secure server-side function)
         if (password) {
-          if (!adminAuthClient) throw new Error('Service Role Key is missing. Password cannot be updated.');
-          const { error: passError } = await adminAuthClient.auth.admin.updateUserById(editingId, { password });
-          if (passError) throw passError;
+          await callAdminAction({ action: 'reset_password', target_id: editingId, password });
           alert('Employee profile & password updated successfully!');
         } else {
           alert('Employee updated successfully.');
         }
-        
+
         setIsModalOpen(false);
         fetchEmployees();
       } else {
-        // CREATE NEW
-        if (!adminAuthClient) throw new Error('Service Role Key is missing in .env.local. Cannot create users.');
-
-        const { data: authData, error: authError } = await adminAuthClient.auth.admin.createUser({
-          email,
-          password,
-          email_confirm: true
-        });
-
-        if (authError) throw authError;
-
-        const newUserId = authData?.user?.id;
-        if (!newUserId) throw new Error('Could not create auth user.');
-
-        const { error: dbError } = await (supabase as any).from('employees').insert({
-          id: newUserId,
-          name, phone, email, role,
+        // CREATE NEW (auth user + employee record both created server-side)
+        const result = await callAdminAction({
+          action: 'create',
+          name, phone, email, password, role,
           parent_id: role === 'employee' ? (parentId || null) : null,
           is_active: true
         });
+        if (!result?.ok) throw new Error('Could not create employee account.');
 
-        if (dbError) throw dbError;
-        
         setCreatedCredentials({ email, pass: password, phone });
         fetchEmployees();
       }
@@ -163,22 +148,12 @@ export default function AdminEmployeesPage() {
   }
 
   async function deleteEmployee(emp: Employee) {
-    if (!adminAuthClient) {
-      alert("Missing VITE_SUPABASE_SERVICE_ROLE_KEY! You cannot delete users without it.");
-      return;
-    }
     const confirmDelete = prompt(`DANGER: Type "DELETE" to permanently erase ${emp.name} from the system.`);
     if (confirmDelete !== 'DELETE') return;
 
     setIsLoading(true);
     try {
-      // Delete from public table
-      await (supabase as any).from('employees').delete().eq('id', emp.id);
-      
-      // Delete from Auth
-      const { error } = await adminAuthClient.auth.admin.deleteUser(emp.id);
-      if (error) throw error;
-
+      await callAdminAction({ action: 'delete', target_id: emp.id });
       alert('Employee permanently deleted.');
       fetchEmployees();
     } catch (err: any) {

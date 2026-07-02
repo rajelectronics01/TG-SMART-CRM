@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { supabase } from '../core/supabase/client';
 import {
   LayoutDashboard, Ticket, User,
   LogOut, Bell, Settings, ChevronRight, MapPin, Users
@@ -34,18 +35,45 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
   const { employee, isAdmin, isManager, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  useEffect(() => {
+    if (!isAdmin && !isManager) return;
+
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'tickets'
+        },
+        (payload) => {
+          console.log('New ticket alert:', payload);
+          setUnreadNotifications(prev => prev + 1);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAdmin, isManager]);
   
   let nav = employeeNav;
   if (isAdmin) nav = adminNav;
   else if (isManager) nav = managerNav;
 
   const initials = employee?.name
-    ? employee.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+    ? employee.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
     : "??";
 
   async function handleSignOut() {
-    await signOut();
-    navigate("/login");
+    if (window.confirm("Are you sure you want to sign out?")) {
+      await signOut();
+      navigate("/login");
+    }
   }
 
   const portalName = isAdmin ? "Admin Portal" : isManager ? "Area Manager" : "Staff Portal";
@@ -120,8 +148,20 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <button className="desktop-only" style={{ background: "var(--surface-highest)", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--on-surface-variant)" }}>
+            <button className="icon-btn relative" title="Notifications" onClick={() => setUnreadNotifications(0)}>
               <Bell size={16} />
+              {unreadNotifications > 0 && (
+                <span style={{ 
+                  position: 'absolute', top: '-2px', right: '-2px', 
+                  background: 'var(--error)', color: 'white', 
+                  fontSize: '10px', fontWeight: 800, 
+                  width: '16px', height: '16px', borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: '2px solid white'
+                }}>
+                  {unreadNotifications > 10 ? '9+' : unreadNotifications}
+                </span>
+              )}
             </button>
             <div className="avatar" style={{ width: 32, height: 32, fontSize: "0.7rem" }}>{initials}</div>
             <button className="mobile-only" onClick={handleSignOut} style={{ background: "none", border: "none", color: "var(--on-surface-variant)" }}>
@@ -137,7 +177,7 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
 
         {/* Mobile Bottom Navigation */}
         <nav className="mobile-bottom-nav mobile-only">
-          {nav.slice(0, 4).map((item) => {
+          {nav.slice(0, 5).map((item) => {
              const isActive = item.to === "/admin" || item.to === "/manager"
              ? location.pathname === item.to
              : location.pathname.startsWith(item.to);

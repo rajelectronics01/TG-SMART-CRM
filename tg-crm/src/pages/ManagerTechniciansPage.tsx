@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react';
 import AppLayout from '../components/AppLayout';
 import { useAuth } from '../core/auth/AuthContext';
 import { supabase } from '../core/supabase/client';
-import { createClient } from '@supabase/supabase-js';
 import type { Employee } from '../core/supabase/database.types';
 import { Plus, Mail, X, RefreshCw, Smartphone, Users } from 'lucide-react';
 
-const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-const adminAuthClient = serviceKey 
-  ? createClient(import.meta.env.VITE_SUPABASE_URL, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } })
-  : null;
+async function callAdminAction(body: Record<string, unknown>) {
+  const { data, error } = await supabase.functions.invoke('admin-user-actions', { body });
+  if (error) throw new Error(error.message || 'Admin action failed');
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
 
 export default function ManagerTechniciansPage() {
   const { employee } = useAuth();
@@ -54,32 +55,18 @@ export default function ManagerTechniciansPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      // 1. Create auth user securely
-      if (!adminAuthClient) {
-        throw new Error('Service Role Key is missing in .env.local. Area Managers cannot register new technicians securely without it.');
-      }
-
-      const { data: authData, error: authError } = await adminAuthClient.auth.admin.createUser({
-        email: formData.email,
-        password: formData.password,
-        email_confirm: true
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Could not create authentication account.");
-
-      // 2. Create employee profile linked to manager
-      const { error: profileError } = await (supabase as any).from('employees').insert({
-        id: authData.user.id,
+      // Create auth user + employee profile together, server-side (secure Edge Function)
+      const result = await callAdminAction({
+        action: 'create',
         name: formData.name,
         phone: formData.phone,
         email: formData.email,
+        password: formData.password,
         role: 'employee',
         parent_id: employee!.id,
         is_active: formData.is_active
       });
-
-      if (profileError) throw profileError;
+      if (!result?.ok) throw new Error('Could not create technician account.');
 
       alert("Technician added successfully!");
       setIsModalOpen(false);
