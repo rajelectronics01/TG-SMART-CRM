@@ -121,9 +121,11 @@ export default function AdminRoutingPage() {
     L.control.zoom({ position: 'topright' }).addTo(map);
     mapRef.current = map;
 
-    // Premium Map Tiles
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap &copy; CARTO'
+    // Map tiles: OpenStreetMap standard (free, no API key required).
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      subdomains: 'abc',
+      maxZoom: 19,
     }).addTo(map);
 
     renderLayers();
