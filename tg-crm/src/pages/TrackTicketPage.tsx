@@ -38,36 +38,18 @@ export default function TrackTicketPage() {
   async function fetchTicket(id: string) {
     setIsLoading(true); setNotFound(false); setTicket(null);
     try {
-      let result = null;
-      
-      const cleanId = id.trim().toUpperCase();
-      
-      // Try fetching by Ticket Number first
-      result = await supabase
-        .from('tickets')
-        .select('*, customers(*)')
-        .ilike('ticket_number', cleanId)
-        .limit(1)
-        .maybeSingle();
+      const cleanId = id.trim();
 
-      // If not found, try by phone number
-      if (!result.data) {
-        result = await supabase
-          .from('tickets')
-          .select('*, customers!inner(*)')
-          .eq('customers.phone', cleanId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-      }
+      // Public status lookup via a secure server-side function (no direct table access).
+      const { data, error } = await (supabase as any).rpc('track_ticket', { p_query: cleanId });
 
-      if (result.error) {
-        console.error('Track Ticket Error:', result.error.message);
+      if (error) {
+        console.error('Track Ticket Error:', error.message);
         setNotFound(true);
-      } else if (!result.data) {
+      } else if (!data) {
         setNotFound(true);
       } else {
-        setTicket(result.data as unknown as (Ticket & { customers: Customer }));
+        setTicket(data as unknown as (Ticket & { customers: Customer }));
       }
     } catch (e) {
       console.error(e);

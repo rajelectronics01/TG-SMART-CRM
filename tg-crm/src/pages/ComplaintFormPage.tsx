@@ -65,108 +65,67 @@ export default function ComplaintFormPage() {
 
     setIsLoading(true);
     try {
-      // 1. Upsert Customer
-      const { data: customer, error: custErr } = await (supabase as any)
-        .from('customers')
-        .upsert({ name: form.name, phone: form.phone, email: form.email || null, address: form.address, pincode: form.pincode }, { onConflict: 'phone' })
-        .select('id').single();
-      if (custErr) throw custErr;
-
-      // 2. Upload Invoice
+      // 1. Upload invoice (best-effort; a failed upload never blocks the ticket)
       let invoiceUrl: string | null = null;
       if (form.invoice) {
-        const filename = `invoices/${Date.now()}-${form.invoice.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
-        await supabase.storage.from('ticket-attachments').upload(filename, form.invoice);
-        const { data: { publicUrl } } = supabase.storage.from('ticket-attachments').getPublicUrl(filename);
-        invoiceUrl = publicUrl;
+        try {
+          const filename = `invoices/${Date.now()}-${form.invoice.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
+          const { error: upErr } = await supabase.storage.from('ticket-attachments').upload(filename, form.invoice);
+          if (!upErr) {
+            invoiceUrl = supabase.storage.from('ticket-attachments').getPublicUrl(filename).data.publicUrl;
+          }
+        } catch (uploadErr) {
+          console.error('Invoice upload failed (non-blocking):', uploadErr);
+        }
       }
 
-      // 4. Generate custom Ticket Number based on product + date
-      const now = new Date();
-      const datePart = now.getFullYear().toString() + 
-                      (now.getMonth() + 1).toString().padStart(2, '0') + 
-                      now.getDate().toString().padStart(2, '0');
-      
-      let prefix = 'TG';
-      if (form.productType === 'Washing Machine') prefix = 'TGWM';
-      else if (form.productType === 'Air Cooler') prefix = 'TGAC';
-      else if (form.productType === 'Washer') prefix = 'TGW';
-      else if (form.productType === 'Television') prefix = 'TGTV';
+      // 2. Submit the whole complaint atomically via a secure server-side function.
+      //    Runs with elevated privileges so anonymous users never touch tables directly.
+      const { data: result, error: rpcErr } = await (supabase as any).rpc('submit_complaint', {
+        p_name: form.name,
+        p_phone: form.phone,
+        p_email: form.email || null,
+        p_address: form.address,
+        p_pincode: form.pincode,
+        p_product_type: form.productType,
+        p_product_model: form.productModel || null,
+        p_serial_number: form.serialNumber || null,
+        p_issue_description: form.issueDescription,
+        p_complainant_type: form.complainantType || 'customer',
+        p_dealer_name: form.complainantType === 'dealer' ? form.dealerName.trim() : null,
+        p_invoice_url: invoiceUrl,
+      });
+      if (rpcErr) throw rpcErr;
 
-      const fullPrefix = `${prefix}${datePart}`;
-      
-      const { data: latestTickets } = await (supabase as any)
-        .from('tickets')
-        .select('ticket_number')
-        .like('ticket_number', `${fullPrefix}%`)
-        .order('ticket_number', { ascending: false })
-        .limit(1);
-      
-      let nextNumber = 1;
-      if (latestTickets && latestTickets.length > 0) {
-        const lastNum = latestTickets[0].ticket_number.slice(fullPrefix.length);
-        const parsed = parseInt(lastNum, 10);
-        if (!isNaN(parsed)) nextNumber = parsed + 1;
-      }
-      const newTicketNumber = `${fullPrefix}${String(nextNumber).padStart(3, '0')}`;
+      const ticketNumber: string = result?.ticket_number;
+      const ticketId: string = result?.ticket_id;
+      const autoAssignedTo: string | null = result?.assigned_to || null;
+      const techName: string | null = result?.technician_name || null;
 
-      // 5. Smart Routing: Auto-Assign Technician based on Pincode
-      const { data: routeMatch } = await (supabase as any)
-        .from('pincode_routes')
-        .select('employee_id, employees!employee_id(name)')
-        .eq('pincode', form.pincode)
-        .maybeSingle();
-
-      const autoAssignedTo = routeMatch?.employee_id || null;
-      const techName = (routeMatch as any)?.employees?.name || null;
-      const initialStatus = autoAssignedTo ? 'assigned' : 'new';
-
-      // 6. Create Ticket
-      const { data: ticket, error: tickErr } = await (supabase as any)
-        .from('tickets')
-        .insert({
-          ticket_number: newTicketNumber,
-          customer_id: customer.id,
-          assigned_to: autoAssignedTo,
+      // 3. Notifications (best-effort; never block a successful submission)
+      try {
+        const msg = `Dear ${form.name}, Ticket ${ticketNumber} created for TG SMART ${form.productType}. ${autoAssignedTo ? `Technician ${techName} assigned.` : 'Our team will contact you soon.'} Track at: ${window.location.host}/track. - TG SMART`;
+        await sendSMS(form.phone, msg);
+        await notifyNewTicket({
+          id: ticketId,
+          ticket_number: ticketNumber,
+          customer_name: form.name,
           product_type: form.productType,
-          product_brand: 'TG SMART',
-          product_model: form.productModel || null,
-          serial_number: form.serialNumber || null,
           issue_description: form.issueDescription,
-          complainant_type: form.complainantType,
-          dealer_name: form.complainantType === 'dealer' ? form.dealerName.trim() : null,
-          status: initialStatus,
-          photos: [],
-          invoice_url: invoiceUrl,
-        })
-        .select('*, id, ticket_number').single();
-      if (tickErr) throw tickErr;
-
-      // 7. Send Notifications
-      const msg = `Dear ${form.name}, Ticket ${ticket.ticket_number} created for TG SMART ${form.productType}. ${autoAssignedTo ? `Technician ${techName} assigned.` : 'Our team will contact you soon.'} Track at: ${window.location.host}/track. - TG SMART`;
-      await sendSMS(form.phone, msg);
-
-      // Phase 1 Optimization (New Ticket)
-      await (supabase as any).from('tickets').update({ status: initialStatus }).eq('id', ticket.id);
-      await notifyNewTicket({
-        id: ticket.id,
-        ticket_number: ticket.ticket_number,
-        customer_name: form.name,
-        product_type: form.productType,
-        issue_description: form.issueDescription
-      }, form.email);
-
-      // Trigger Phase 2 (Auto-Assignment) if routed
-      if (autoAssignedTo && form.email) {
-        notifyTechnicianAssigned(
-          { ...ticket, customer_name: form.name }, 
-          form.email, 
-          techName
-        );
+        }, form.email);
+        if (autoAssignedTo && form.email) {
+          notifyTechnicianAssigned(
+            { id: ticketId, ticket_number: ticketNumber, customer_name: form.name } as any,
+            form.email,
+            techName || ''
+          );
+        }
+      } catch (notifyErr) {
+        console.error('Notification error (non-blocking):', notifyErr);
       }
 
-      // 8. Redirect to confirmation
-      navigate(`/confirmation/${ticket.ticket_number}`);
+      // 4. Redirect to confirmation
+      navigate(`/confirmation/${ticketNumber}`);
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Submission failed. Please try again.');
